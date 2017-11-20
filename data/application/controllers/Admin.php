@@ -35,8 +35,26 @@ class Admin extends MX_Controller {
    * @author Alexey
    */
   function category() {
+    $this->load->model('category_model');
     $this->methodСonstructor('category');
+  }
+
+  /**
+   * Категории - список
+   * @author Alexey
+   */
+  function _category_default() {
+    $items = $this->category_model->find();
+    $this->view->set('items', $items);
     return $this->view->render('/admin/category/main');
+  }
+
+  /**
+   * Добавить категорию
+   * @author Alexey
+   */
+  function _category_addForm() {
+
   }
 
   /**

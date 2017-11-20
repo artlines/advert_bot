@@ -18,7 +18,27 @@
   margin: 10px;
 }
 
+#action-panel .loader {
+
+}
+
+.font-40 {
+  font-size: 40px !important;
+}
+
 .ident-20 {
   margin-left: 20px;
+  margin-top: 20px;
+}
+.ident-40 {
+  margin-left: 40px;
+  margin-top: 20px;
+}
+.ident-60 {
+  margin-left: 60px;
+  margin-top: 20px;
+}
+.ident-80 {
+  margin-left: 80px;
   margin-top: 20px;
 }

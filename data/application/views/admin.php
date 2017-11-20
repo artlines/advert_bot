@@ -5,7 +5,8 @@
     <title><?=config('main_title');?> || Админпанель</title>
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="/assets/admin/css/main.css">
+    <link rel="stylesheet" type="text/css" href="/assets/admin/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="/node_modules/font-awesome/css/font-awesome.min.css" />
   </head>
   <body>
 

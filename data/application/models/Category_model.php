@@ -1,6 +1,6 @@
 <?php
 /**
- * @Property db $db
+ * @property CI_DB_mysqli_driver $db
  */
 class Category_model extends CI_Model {
   
@@ -11,28 +11,44 @@ class Category_model extends CI_Model {
   function __construct() {
     parent::__construct();
   }
-  
+
   /**
-   * Получить параметр категории
+   * Поиск категорий
    * @author Alexey
    */
-  function getValue($params) {
-    $res = $this->db->where($params)->get('shop_category_values')->row();
-    return $res;
+  function find($params = []) {
+    return $this->db->order_by('left_key')->get('category')->result();
   }
-  
+
   /**
-   * Сохранить параметр категории
+   * Добавить
    * @author Alexey
    */
-  function setValue($params) {
-    $this->db->trans_start();
-    $this->db->delete('shop_category_values', [
-      'field'       => $params['field'],
-      'category_id' => $params['category_id']
-    ]);
-    $this->db->insert('shop_category_values', $params);
-    $res = $this->db->trans_complete();
-    return $res;
+  function add() {
+
+  }
+
+  /**
+   *
+   * @author Alexey
+   */
+  function del() {
+
+  }
+
+  /**
+   *
+   * @author Alexey
+   */
+  function get() {
+
+  }
+
+  /**
+   *
+   * @author Alexey
+   */
+  function set() {
+
   }
 }

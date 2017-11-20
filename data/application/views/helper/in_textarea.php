@@ -1,0 +1,1 @@
+<textarea name="<?=$name;?>" id="<?=$id;?>" style="width:<?=$width;?>; height:<?=$height;?>;" <?=$readonly;?> class="form-control" placeholder="<?=$placeholder;?>"><?=$value;?></textarea>

@@ -1,0 +1,1 @@
+<input type="text" name="<?=$name;?>" id="<?=$id;?>" value="<?=$value;?>" style="width:<?=$width;?>" class="<?=$class;?> form-control" placeholder="<?=$placeholder;?>" />

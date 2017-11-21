@@ -551,8 +551,8 @@ define('USER_V_ROOM',   18);  // 18 Подъезд, этаж, квартира
 define('USER_V_ADDR',   23);  // 23 Адрес доставки
 define('USER_V_CONT',   24);  // 24 Контактное лицо
 
-define('ERROR_LOG', '/home/advert/web/advert.artline.me/public_html/data/application/logs/error.log');
-define('LOG', '/home/advert/web/advert.artline.me/public_html/data/application/logs/log.log');
-define('PHOTO_DIR', '/home/advert/web/advert.artline.me/public_html/data/application/logs/');
-define('FILE_DIR', '/home/advert/web/advert.artline.me/public_html/data/application/logs/');
-define('MESSAGE_LOG', '/home/advert/web/advert.artline.me/public_html/data/application/logs/message.log');
+define('ERROR_LOG', '/home/advert/web/advert.artline.me/data/application/logs/error.log');
+define('LOG', '/home/advert/web/advert.artline.me/data/application/logs/log.log');
+define('PHOTO_DIR', '/home/advert/web/advert.artline.me/data/application/logs/');
+define('FILE_DIR', '/home/advert/web/advert.artline.me/data/application/logs/');
+define('MESSAGE_LOG', '/home/advert/web/advert.artline.me/data/application/logs/message.log');

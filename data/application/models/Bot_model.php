@@ -130,19 +130,17 @@ class Bot_model extends CI_Model
   public function editAdvertText($data, $advert_id)
   {
     if($advert_id){
-      $advert = $this->db->get('advert')->where('id', $advert_id);
+      $advert = $this->db->where('id', $advert_id)->get('advert')->row();
       file_put_contents(LOG, print_r($advert, 1));
 
       return $this->db->update('advert',
         [
-          'id' => $data['advert_id'],
           'title' => $data['title'] ?: $advert->title,
           'content' => $data['content'] ?: $advert->content,
         ],
         ['id' => $advert_id]
       );
     }else{
-      unset($data['previous_action']);
       $this->db->insert('advert', $data);
       $data = [
         'user_id' => $data['user_id'],

@@ -167,6 +167,9 @@ class Bot extends MX_Controller {
           ];
         }elseif ($advert->content && $advert->title){
           $answer = 'Добавьте картинки или файлы';
+          $keyboard = [
+            [self::STEPS['clearState']],
+          ];
         }
 
         $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
@@ -194,7 +197,7 @@ class Bot extends MX_Controller {
       ];
       $user_state = $this->_get_user_state($data);
       $advert_id = $user_state->advert_id ?: 0;
-
+      unset($data['previous_action']);
       if($this->bot_model->editAdvertText($data, $advert_id)){
         return $this->setAdvert($p);
       }else{
@@ -223,20 +226,12 @@ class Bot extends MX_Controller {
         'photo' => $filename,
       ];
       $answer = "Успех".$filename;
+      //картинки добавлены, вернуть управление setAdvert
+      //добавить фотки, если нет
+      //ежели в достатке данных, порадовать пользователя успешной записью и отправкой на модерацию
+
       $p->bot()->send_message($p->chatid(), $answer);
 
-      /*if($post->message->text == self::STEPS['clearState']){
-        $answer = 'Начинаем сначала';
-      }elseif($id = $this->bot_model->setAdvertText($data)){
-        //проверка объявления на целостность: заголовок, текст, картинки
-        $answer = "Объявление успешно добавлено и ожидает модерации";
-        $data['previous_action'] = self::STEPS['finish'];
-        $user_state = $this->_get_user_state($data);
-        $keyboard = [[self::STEPS['clearState']]];
-        $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-        $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-        return [__METHOD__ => self::STATUS_SUCCESS];
-      }*/
 
     }catch(Exception $e) {
       return [__METHOD__ => $e->getMessage()];
@@ -258,22 +253,9 @@ class Bot extends MX_Controller {
         'user_id' => $post->message->from->id,
         'file' => $filename,
       ];
-      //file_put_contents(LOG, print_r($post->message, 1));
+      //то же, что и в фото, только с файлами
       $answer = "Успех".$filename;
       $p->bot()->send_message($p->chatid(), $answer);
-
-      /*if($post->message->text == self::STEPS['clearState']){
-        $answer = 'Начинаем сначала';
-      }elseif($id = $this->bot_model->setAdvertText($data)){
-        //проверка объявления на целостность: заголовок, текст, картинки
-        $answer = "Объявление успешно добавлено и ожидает модерации";
-        $data['previous_action'] = self::STEPS['finish'];
-        $user_state = $this->_get_user_state($data);
-        $keyboard = [[self::STEPS['clearState']]];
-        $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-        $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-        return [__METHOD__ => self::STATUS_SUCCESS];
-      }*/
 
     }catch(Exception $e) {
       return [__METHOD__ => $e->getMessage()];

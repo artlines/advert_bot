@@ -1,6 +1,10 @@
-Array
+stdClass Object
 (
+    [id] => 31
     [user_id] => 258895464
-    [previous_action] => Разместить
-    [content] => 222
+    [category_id] => 
+    [content] => 
+    [title] => Заголовок
+    [picture] => 
+    [file] => 
 )

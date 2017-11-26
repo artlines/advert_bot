@@ -1,10 +1,8 @@
 stdClass Object
 (
-    [id] => 31
+    [id] => 35
     [user_id] => 258895464
     [category_id] => 
     [content] => 
-    [title] => Заголовок
-    [picture] => 
-    [file] => 
+    [title] => ///
 )

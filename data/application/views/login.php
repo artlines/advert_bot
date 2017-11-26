@@ -6,7 +6,7 @@
     <title><?=config('main_title');?> || Авторизация</title>
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="/assets/admin/main.css">
+    <link rel="stylesheet" type="text/css" href="/assets/admin/css/main.css">
   </head>
   <body>
     <div id="auth_block" class="d-flex justify-content-center align-items-center">

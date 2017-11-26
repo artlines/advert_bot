@@ -27,6 +27,9 @@
             <a href="#edit" data-id="<?=$item->id;?>" data-type="category" class="edit-object">
               <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
             </a>
+            <a href="#delete" data-id="<?=$item->id;?>" data-type="category" class="delete-object">
+              <i class="fa fa-trash" aria-hidden="true"></i>
+            </a>
           </div>
         </li>
       <? endforeach;?>

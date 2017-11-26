@@ -155,6 +155,17 @@ class Bot_model extends CI_Model
     return $this->db->where('id', $id)->get('advert')->row();
   }
 
+  public function getAdvertFiles($options)
+  {
+    //при выдаче добавить условия $this->db->where для типов файлов и т.д.
+    return $this->db->where('advert_id', $options->advert_id)->get('advert_file')->result();
+  }
+
+  public function setAdvertFiles($file)
+  {
+    return $this->db->insert('advert_file', $file);
+  }
+
   public function cleanUserState($id)
   {
     return $this->db->delete('user_state', ['user_id' => $id]);

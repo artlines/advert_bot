@@ -1,5 +1,7 @@
 <?php
-
+/**
+ * @property CI_Session $session
+ */
 class Login extends MX_Controller {
 
   function __construct() {
@@ -11,7 +13,7 @@ class Login extends MX_Controller {
     $password = $this->input->post("password");
     $dt['error_message'] = "";
     if ($username <> '') {
-      $query = $this->db->query("select * from user where username='{$username}' and password='{$password}' and admin=1");
+      $query = $this->db->query("select * from user where username='{$username}' and password = SHA2('{$password}', '256') and admin = 1");
       if ($query->num_rows() > 0) {
         $user = $query->row();
          $this->session->user_uid   = $user->id;

@@ -11,10 +11,14 @@
       return "Таблица {$table} не найдена";
     }
     $params['name'] ? $fname = $params['name'] : $fname = 'name';
-    
-    $check = $CI->db->query("show fields from {$table} where Field='priority'")->num_rows();
-    $order_by = ($check ? 'priority' : $fname);
-    
+
+    if (!$params['order']) {
+      $check = $CI->db->query("show fields from {$table} where Field='priority'")->num_rows();
+      $order_by = ($check ? 'priority' : $fname);
+    }
+    else {
+      $order_by = $params['order'];
+    }
     $CI->db->order_by($order_by);
     if ($params['where']) {
       $CI->db->where($params['where']);
@@ -132,6 +136,7 @@
       isset($value['size'])      ? $size = "size='{$value['size']}'"  : $size = '';
       isset($value['class'])     ? $class = $value['class']           : $class = 'select_default';
       isset($value['only_opts']) ? $only_opts = $value['only_opts']   : $only_opts = false;
+      isset($value['ident'])     ? $ident = $value['ident']           : $ident = false;
     }
     else {
       $fvalue = $value;
@@ -146,13 +151,17 @@
           $fvalue==$k[$fid]
             ? $selected = 'selected' 
             : $selected = '';
-          $text .= "<option value='{$k[$fid]}' {$selected}>{$k[$fname]}</option>";
+          if ($ident) {
+            $value = str_pad($k[$fname], strlen($k[$fname]) + $k[$ident] * 2, '-', STR_PAD_LEFT);
+          }
+          $text .= "<option value='{$k[$fid]}' {$selected}>{$value}</option>";
         }
         else {
+          $value = $k->$fname;
           $fvalue==$k->$fid
             ? $selected = 'selected' 
             : $selected = '';
-          $text .= "<option value='{$k->$fid}' {$selected}>{$k->$fname}</option>";
+          $text .= "<option value='{$k->$fid}' {$selected}>{$value}</option>";
         }
       }
     }

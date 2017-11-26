@@ -8,7 +8,7 @@ class Bot extends MX_Controller {
   const STATUS_ERROR = "error";
   const STEPS = [
     "start" => "/start",
-    "finish" => "Энергия тамаса",
+    "finish" => "Опубликовать",
     "clearState" => "Начать сначала",
     "getRegion" => "Выбрать регион",
     "getCategory" => "Выбрать категорию",
@@ -142,8 +142,7 @@ class Bot extends MX_Controller {
       }else{
         
         $advert = $this->bot_model->getAdvertText($user_state->advert_id);
-//        $action = array_search($post->message->text, self::STEPS['setAdvertText']);
-//        file_put_contents(LOG, print_r($action, 1));
+        $advert_file = $this->bot_model->getAdvertFiles($user_state);
 
         if(!$advert || !$advert->title){
           $data = [
@@ -165,10 +164,15 @@ class Bot extends MX_Controller {
           $keyboard = [
             [self::STEPS['clearState']],
           ];
-        }elseif ($advert->content && $advert->title){
+        }elseif ($advert->content && $advert->title && !$advert_file){
           $answer = 'Добавьте картинки или файлы';
           $keyboard = [
             [self::STEPS['clearState']],
+          ];
+        }elseif($advert_file){
+          $answer = 'Добавьте еще или завершите публикацию.';
+          $keyboard = [
+            [self::STEPS['finish']],
           ];
         }
 
@@ -218,20 +222,24 @@ class Bot extends MX_Controller {
     try{
 
       $post = $p->bot()->read_post_message();
+      $user = [
+        'user_id' => $post->message->from->id,
+      ];
+      $user_state = $this->_get_user_state($user);
       $file_id = $post->message->photo[3]->file_id;
       $file_path = PHOTO_DIR.'/'.$file_id;
       $filename = $p->bot()->get_file($file_id, $file_path);
       $data = [
-        'user_id' => $post->message->from->id,
-        'photo' => $filename,
+        'link' => $filename,
+        'advert_id' => $user_state->advert_id,
+        'type' => 'photo'
       ];
-      $answer = "Успех".$filename;
-      //картинки добавлены, вернуть управление setAdvert
-      //добавить фотки, если нет
-      //ежели в достатке данных, порадовать пользователя успешной записью и отправкой на модерацию
 
-      $p->bot()->send_message($p->chatid(), $answer);
-
+      if($this->bot_model->setAdvertFiles($data)){
+        return $this->setAdvert($p);
+      }else{
+        return false;
+      }
 
     }catch(Exception $e) {
       return [__METHOD__ => $e->getMessage()];
@@ -246,16 +254,24 @@ class Bot extends MX_Controller {
     try{
 
       $post = $p->bot()->read_post_message();
+      $user = [
+        'user_id' => $post->message->from->id,
+      ];
+      $user_state = $this->_get_user_state($user);
       $file_id = $post->message->document->file_id;
       $file_path = FILE_DIR.$post->message->document->file_name;
       $filename = $p->bot()->get_file($file_id, $file_path);
       $data = [
-        'user_id' => $post->message->from->id,
-        'file' => $filename,
+        'link' => $filename,
+        'advert_id' => $user_state->advert_id,
+        'type' => 'file'
       ];
-      //то же, что и в фото, только с файлами
-      $answer = "Успех".$filename;
-      $p->bot()->send_message($p->chatid(), $answer);
+
+      if($this->bot_model->setAdvertFiles($data)){
+        return $this->setAdvert($p);
+      }else{
+        return false;
+      }
 
     }catch(Exception $e) {
       return [__METHOD__ => $e->getMessage()];

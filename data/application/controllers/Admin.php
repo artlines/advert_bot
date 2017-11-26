@@ -3,6 +3,7 @@
  * @property Category_model $category_model
  * @property CI_URI $uri
  * @property View $view
+ * @property CI_Session $session
  */
 class Admin extends MX_Controller {
   
@@ -12,9 +13,9 @@ class Admin extends MX_Controller {
 
   function __construct() {
     parent::__construct();
-    include(ROOT."/ckeditor/ckeditor.php");
+    include(ROOT . "/ckeditor/ckeditor.php");
     $this->view->setLayout("admin.php");
-    if ( $_SESSION['user_admin'] <> 1 ) {
+    if ( ! $this->session->user_admin ) {
       header("Location: /login");
       exit();
     }
@@ -50,13 +51,43 @@ class Admin extends MX_Controller {
   }
 
   /**
-   * Добавить категорию
+   * Добавить категорию - форма
    * @author Alexey
    */
   function _category_addForm() {
+    return $this->load->view('/admin/category/addForm');
+  }
+
+  /**
+   * Добавить категорию
+   * @author Alexey
+   */
+  function _category_add() {
+    try {
+      $this->category_model->add($this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
+
+  /**
+   * Редактировать категорию
+   * @author Alexey
+   */
+  function _category_edit() {
 
   }
 
+  /**
+   * Удалить категорию
+   * @author Alexey
+   */
+  function _category_del() {
+    $id = (int)$this->params['post']['id'];
+    $this->category_model->del($id);
+  }
   /**
    * Конструктов групп методов
    * @author Alexey

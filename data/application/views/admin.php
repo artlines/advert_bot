@@ -18,7 +18,7 @@
         <a class="nav-link" href="/admin/category">Категории</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/admin/user">Пользователи</a>
+        <a class="nav-link" href="/admin/users">Пользователи</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/admin/geo">География</a>

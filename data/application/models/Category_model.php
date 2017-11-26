@@ -77,18 +77,23 @@ class Category_model extends CI_Model {
   }
 
   /**
-   *
+   * Получить
    * @author Alexey
    */
-  function get() {
-
+  function get($id) {
+    $id = (int)$id;
+    return $this->db->where(['id' => $id])->get('category')->row();
   }
 
   /**
-   *
+   * Изменить
    * @author Alexey
    */
-  function set() {
-
+  function set($id, $params) {
+    $id = (int)$id;
+    $this->db->update('category', [
+      'name'      => $params['name'],
+      'is_active' => ($params['is_active'] == 'on' ? 1 : 0)
+    ], ['id' => $id]);
   }
 }

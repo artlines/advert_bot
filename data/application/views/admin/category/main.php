@@ -24,10 +24,13 @@
           <span class="ident-<?=($item->level - 1) * 2;?>0"></span>
           <?=$item->name;?>
           <div class="pull-right">
-            <a href="#edit" data-id="<?=$item->id;?>" data-type="category" class="edit-object">
+            <? if (!$item->is_active):?>
+              <i class="fa fa-minus-square" aria-hidden="true" title="Не активна"></i>
+            <? endif;?>
+            <a href="#edit" data-id="<?=$item->id;?>" data-type="category" class="edit-object" title="Редактировать">
               <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
             </a>
-            <a href="#delete" data-id="<?=$item->id;?>" data-type="category" class="delete-object">
+            <a href="#delete" data-id="<?=$item->id;?>" data-type="category" class="delete-object" title="Удалить">
               <i class="fa fa-trash" aria-hidden="true"></i>
             </a>
           </div>

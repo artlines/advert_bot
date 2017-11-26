@@ -5,7 +5,31 @@ class User_model extends CI_Model {
   function __construct() {
     parent::__construct();
   }
-  
+
+  /**
+   * Поиск
+   * @author Alexey
+   */
+  function find() {
+    $where = [
+      'admin' => 0
+    ];
+    return $this->db
+      ->where($where)
+      ->order_by('tm_register DESC')
+      ->get('user')
+      ->result();
+  }
+
+  /**
+   * Количество
+   * @author Alexey
+   */
+  function count() {
+    return $this->db->where(['admin' => 0])->count_all_results('user');
+  }
+
+  // ---- OLD -----
   /**
    * Получить инфу про юзера
    */
@@ -259,14 +283,6 @@ class User_model extends CI_Model {
       order by priority, id"
     )->result_array();
     return $query;
-  }
-  
-  /**
-   * Поиск юзера
-   */
-  function Find($params = array()) {
-    $res = $this->db->query("select id, username, t_kl, active from user where admin=0 order by id desc")->result_array();
-    return $res;
   }
   
   /**

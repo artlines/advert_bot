@@ -27,6 +27,13 @@ $(function() {
     addForm: function () {
       return this.actionPanel.find('.obj-add-form');
     },
+    editForm: function () {
+      return this.actionPanel.find('.obj-edit-form');
+    },
+    loader: function () {
+      return this.actionPanel.html('<i class="fa fa-spinner font-40 loader" aria-hidden="true"></i>') ;
+    },
+
     submitAddFormEventListen: function () {
       this.addForm().submit(function (e) {
         e.preventDefault();
@@ -41,8 +48,20 @@ $(function() {
         return false;
       });
     },
-    loader: function () {
-      return this.actionPanel.html('<i class="fa fa-spinner font-40 loader" aria-hidden="true"></i>') ;
+
+    submitEditFormEventListen: function () {
+      this.editForm().submit(function (e) {
+        e.preventDefault();
+        var form = $(this).serialize();
+        adminObject.loader();
+        $.post($(this).attr('action'), form, function (data) {
+          if (data.err != '') {
+            return alert(data.err);
+          }
+          location.reload();
+        }, 'json');
+        return false;
+      });
     }
   };
 
@@ -51,7 +70,9 @@ $(function() {
     adminObject.loader();
     var type = $(this).attr('data-type');
     var id   = $(this).attr('data-id');
-    adminObject.actionPanel.load(urlAdminPrefix + type + "/edit/" + id);
+    adminObject.actionPanel.load(urlAdminPrefix + type + "/editForm/", {id: id}, function () {
+      adminObject.submitEditFormEventListen();
+    });
   });
 
   adminObject.addButton().click(function (e) {

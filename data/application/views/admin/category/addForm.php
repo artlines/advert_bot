@@ -10,7 +10,7 @@
   <div class="col-md-6">
     <h2>Добавить категорию</h2>
     <form class="obj-add-form" action="/admin/category/add" method="post">
-      <div>
+      <div class="form-group">
         <div>Родительская категория</div>
         <?=in_table('parent_id', [
           'table' => 'category',
@@ -19,12 +19,11 @@
           'width' => '100%'
         ]);?>
       </div>
-      <div>
+      <div class="form-group">
         <div>Наименование</div>
         <input type="text" class="form-control" name="name" />
       </div>
-      <div class="v-ident-10"></div>
-      <div>
+      <div class="form-group">
         <button class="btn btn-info" name="submit" type="submit">Создать</button>
       </div>
     </form>

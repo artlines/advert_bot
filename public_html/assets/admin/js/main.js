@@ -34,6 +34,18 @@ $(function() {
       return this.actionPanel.html('<i class="fa fa-spinner font-40 loader" aria-hidden="true"></i>') ;
     },
 
+    initEditActions: function () {
+      adminObject.editButton().click(function (e) {
+        e.preventDefault();
+        adminObject.loader();
+        var type = $(this).attr('data-type');
+        var id   = $(this).attr('data-id');
+        adminObject.actionPanel.load(urlAdminPrefix + type + "/editForm/", {id: id}, function () {
+          adminObject.submitEditFormEventListen();
+        });
+      });
+    },
+
     submitAddFormEventListen: function () {
       this.addForm().submit(function (e) {
         e.preventDefault();
@@ -65,15 +77,7 @@ $(function() {
     }
   };
 
-  adminObject.editButton().click(function (e) {
-    e.preventDefault();
-    adminObject.loader();
-    var type = $(this).attr('data-type');
-    var id   = $(this).attr('data-id');
-    adminObject.actionPanel.load(urlAdminPrefix + type + "/editForm/", {id: id}, function () {
-      adminObject.submitEditFormEventListen();
-    });
-  });
+  adminObject.initEditActions();
 
   adminObject.addButton().click(function (e) {
     e.preventDefault();
@@ -94,6 +98,25 @@ $(function() {
         location.reload();
       });
     }
+  });
+
+
+  var users = {
+    listBlock: function () {
+      return adminObject.listPanel.find('.users-list');
+    },
+    searchText: function () {
+      return adminObject.listPanel.find('.users-search');
+    },
+    search: function () {
+      users.listBlock().load(urlAdminPrefix + 'users/search/', {text: users.searchText().val()}, function () {
+        adminObject.initEditActions();
+      });
+    }
+  };
+  users.search();
+  users.searchText().keyup(function () {
+    users.search();
   });
 });
 

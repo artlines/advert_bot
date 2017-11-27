@@ -25,6 +25,8 @@ class Bot_model extends CI_Model
         ['user_id' => $data['user_id']]);
     } else {
       $this->db->insert('user_state', $data);
+      //вставить юзера, указать поля
+      //$this->db->insert('user', $data);
     }
 
     $current = $this->db->where('user_id', $data['user_id'])->get('user_state')->row();

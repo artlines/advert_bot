@@ -148,17 +148,48 @@ class Admin extends MX_Controller {
   }
 
   /**
-   * Категории - список
+   * Страница польователей
    * @author Alexey
    */
   function _users_default() {
-    $items = $this->user_model->find();
     $count = $this->user_model->count();
-    $this->view->set('items', $items);
     $this->view->set('count', $count);
     return $this->view->render('/admin/users/main');
   }
 
+  /**
+   * Поиск
+   * @author Alexey
+   */
+  function _users_search() {
+    $items = $this->user_model->find(['limit' => 30, 'search' => $this->params['post']['text']]);
+    $this->load->view('/admin/users/list', ['items' => $items]);
+  }
+
+  /**
+   * редактирование - форма
+   * @author Alexey
+   */
+  function _users_editForm() {
+    $id = (int)$this->params['post']['id'];
+    $info = $this->user_model->get($id);
+    $this->load->view('/admin/users/editForm', $info);
+  }
+
+  /**
+   * Редактировать категорию
+   * @author Alexey
+   */
+  function _users_edit() {
+    $id = (int)$this->uri->segment(4);
+    try {
+      $this->user_model->set($id, $this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
   ##########################################################################
   ###         SITE services and reviews
   ##########################################################################

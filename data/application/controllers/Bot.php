@@ -20,6 +20,8 @@ class Bot extends MX_Controller {
     "setAdvertText" => [
       "title" => "Ввести заголовок объявления",
       "content" => "Ввести текст объявления",
+      "photo" => "Добавить фото",
+      "file" => "Добавить фaйл",
     ],
     "getAdvert" => [
       "action" => "Смотреть",
@@ -55,10 +57,11 @@ class Bot extends MX_Controller {
     $ts->register_trigger_text_command("trigger_getAdvert", [self::STEPS['getAdvert']['action']], "in_chat");
     $ts->register_trigger_text_command("trigger_getRegion", [self::STEPS['getRegion']], "in_chat");
     $ts->register_trigger_text_command("trigger_clearState", [self::STEPS['clearState']], "in_chat");
+    $ts->register_trigger_text_command("trigger_finish", [self::STEPS['finish']], 0, null);
     $ts->register_trigger_error("trigger_err", "*");
 
     $response = $ts->run($bot, $message);
-    //file_put_contents(LOG, print_r($response, 1), FILE_APPEND);
+    file_put_contents(LOG, print_r($response, 1), FILE_APPEND);
 
   }
 
@@ -165,11 +168,21 @@ class Bot extends MX_Controller {
             [self::STEPS['clearState']],
           ];
         }elseif ($advert->content && $advert->title && !$advert_file){
+          $data = [
+            'user_id' => $post->message->from->id,
+            'previous_action' => self::STEPS['setAdvertText']['file'],
+          ];
+          $this->_get_user_state($data);
           $answer = 'Добавьте картинки или файлы';
           $keyboard = [
             [self::STEPS['clearState']],
           ];
         }elseif($advert_file){
+          $data = [
+            'user_id' => $post->message->from->id,
+            'previous_action' => self::STEPS['setAdvertText']['file'],
+          ];
+          $this->_get_user_state($data);
           $answer = 'Добавьте еще или завершите публикацию.';
           $keyboard = [
             [self::STEPS['finish']],
@@ -177,7 +190,9 @@ class Bot extends MX_Controller {
         }
 
         $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-        return $p->bot()->send_message($p->chatid(), $answer, null, $reply);
+        $p->bot()->send_message($p->chatid(), $answer, null, $reply);
+
+        return [__METHOD__ => 'success'];
       }
 
     }catch(Exception $e) {
@@ -224,10 +239,11 @@ class Bot extends MX_Controller {
       $post = $p->bot()->read_post_message();
       $user = [
         'user_id' => $post->message->from->id,
+        'previous_action' => self::STEPS['setAdvertText']['photo']
       ];
       $user_state = $this->_get_user_state($user);
       $file_id = $post->message->photo[3]->file_id;
-      $file_path = PHOTO_DIR.'/'.$file_id;
+      $file_path = PHOTO_DIR.$file_id;
       $filename = $p->bot()->get_file($file_id, $file_path);
       $data = [
         'link' => $filename,
@@ -256,6 +272,7 @@ class Bot extends MX_Controller {
       $post = $p->bot()->read_post_message();
       $user = [
         'user_id' => $post->message->from->id,
+        'previous_action' => self::STEPS['setAdvertText']['file']
       ];
       $user_state = $this->_get_user_state($user);
       $file_id = $post->message->document->file_id;
@@ -372,6 +389,11 @@ class Bot extends MX_Controller {
           return $this->setAdvertText($p, 'content');
           break;
 
+        case self::STEPS[$method_text]['photo']:
+        case self::STEPS[$method_text]['file']:
+          return $this->setAdvert($p);
+          break;
+
         default:
           $answer = 'Необработанное сообщение | '.$user_state->previous_action.' | '.$method;
           $keyboard = [[self::STEPS['clearState']]];
@@ -381,9 +403,11 @@ class Bot extends MX_Controller {
       if(
         !in_array($data['previous_action'], self::STEPS)
         && !in_array($data['previous_action'], self::STEPS['setAdvert'])
+        && !in_array($data['previous_action'], self::STEPS['setAdvertText'])
         && !in_array($data['previous_action'], self::STEPS['getAdvert'])
       ){
         $p->bot()->send_message($p->chatid(), $answer, null, $reply);
+        return false;
       };
 
       return [__METHOD__ => self::STATUS_SUCCESS];
@@ -393,7 +417,7 @@ class Bot extends MX_Controller {
   }
 
   /**
-   * Очистить состояние юзера
+   * Очистить состояние юзера и начать сначала
   */
   public function clearState($p)
   {
@@ -404,9 +428,38 @@ class Bot extends MX_Controller {
     return $this->welcome($p);
   }
 
+  /**
+   * Конечное обнуление
+   */
+  public function clearStateFinish($p)
+  {
+    $post = $p->bot()->read_post_message();
+    $user_id = $post->message->from->id;
+    $this->bot_model->cleanUserState($user_id);
+
+    return [__METHOD__ => self::STATUS_SUCCESS];
+  }
+
   private function _get_user_state($data)
   {
     return $this->bot_model->changeUserData($data);
+  }
+
+  /**
+   * Завершить публикацию объявления
+   */
+  public function finish($p)
+  {
+    $post = $p->bot()->read_post_message();
+    $data = [
+      'user_id' => $post->message->from->id,
+      'previous_action' => self::STEPS['finish'],
+    ];
+    $this->_get_user_state($data);
+    $answer = "Спасибо, Ваше объявление добавлено и ожидает модерации!";
+    $p->bot()->send_message($p->chatid(), $answer);
+    $this->clearStateFinish($data);
+    return;
   }
 
   /**
@@ -451,6 +504,10 @@ function trigger_text($p) {
 function trigger_clearState($p) {
   $bot = new Bot($p);
   return $bot->clearState($p);
+}
+function trigger_finish($p) {
+  $bot = new Bot($p);
+  return $bot->finish($p);
 }
 function trigger_err($p) {
   $bot = new Bot($p);

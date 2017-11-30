@@ -24,9 +24,17 @@ class Bot_model extends CI_Model
         ],
         ['user_id' => $data['user_id']]);
     } else {
-      $this->db->insert('user_state', $data);
-      //вставить юзера, указать поля
-      //$this->db->insert('user', $data);
+      $this->db->insert('user_state', [
+        'previous_action' => $data['previous_action'],
+        'user_id' => $data['user_id'] ?: $previous->user_type,
+      ]);
+
+      $this->db->insert('user', [
+        'tg_id' => $data['user_id'],
+        'username' => $data['username'],
+        'firstname' => $data['first_name'],
+        'lastname' => $data['last_name'],
+      ]);
     }
 
     $current = $this->db->where('user_id', $data['user_id'])->get('user_state')->row();
@@ -170,7 +178,15 @@ class Bot_model extends CI_Model
 
   public function cleanUserState($id)
   {
-    return $this->db->delete('user_state', ['user_id' => $id]);
+    return $this->db->update('user_state',
+      [
+        'category_id' => '',
+        'region_id' => '',
+        'advert_id' => '',
+        'user_type' => '',
+        'previous_action' => '',
+      ],
+      ['user_id' => $id]);
   }
 }
 

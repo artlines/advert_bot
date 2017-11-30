@@ -54,6 +54,10 @@ class User_model extends CI_Model {
     $id = (int)$id;
     $this->db->update('user', [
       'username'  => $params['username'],
+      'email'     => $params['email'],
+      'phone'     => $params['phone'],
+      'city_id'   => (int)$params['city_id'],
+      'priority'  => (int)$params['priority'],
       'active'    => ($params['active'] == 'on' ? 1 : 0)
     ], ['id' => $id]);
   }

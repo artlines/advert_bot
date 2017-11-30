@@ -1,7 +1,7 @@
 <div class="row">
   <div class="col-md-6">
-    <h2>Редактировать пользователя</h2>
-    <form class="obj-edit-form" action="/admin/users/edit/<?=$id;?>" method="post">
+    <h2>Редактировать объявление</h2>
+    <form class="obj-edit-form" action="/admin/adverts/edit/<?=$id;?>" method="post">
       <div class="form-group">
         <div>Наименование</div>
         <input type="text" class="form-control" name="username" value="<?=$username;?>" />

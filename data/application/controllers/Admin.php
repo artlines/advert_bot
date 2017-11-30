@@ -5,6 +5,7 @@
  * @property View $view
  * @property CI_Session $session
  * @property User_model $user_model
+ * @property Adverts_model $adverts_model
  */
 class Admin extends MX_Controller {
   
@@ -132,7 +133,45 @@ class Admin extends MX_Controller {
   ### SITE advert ####
   ####################
 
+  const ADVERT_PAGINATION_SIZE = 20;
 
+  /**
+   * Объявления
+   * @author Alexey
+   */
+  function adverts() {
+    $this->load->model('adverts_model');
+    $this->methodСonstructor(__FUNCTION__);
+  }
+
+  /**
+   * Страница Объявления
+   * @author Alexey
+   */
+  function _adverts_default() {
+    $count = $this->adverts_model->count();
+    $this->view->set('count', $count);
+    return $this->view->render('/admin/adverts/main');
+  }
+
+  /**
+   * Поиск
+   * @author Alexey
+   */
+  function _adverts_search() {
+    $items = $this->adverts_model->find(['limit' => self::ADVERT_PAGINATION_SIZE, 'search' => $this->params['post']['text']]);
+    $this->load->view('/admin/adverts/list', ['items' => $items]);
+  }
+
+  /**
+   * редактирование - форма
+   * @author Alexey
+   */
+  function _adverts_editForm() {
+    $id = (int)$this->params['post']['id'];
+    $info = $this->adverts_model->get($id);
+    $this->load->view('/admin/adverts/editForm', $info);
+  }
 
   ##########################################################################
   ### USERS

@@ -148,20 +148,19 @@
     if ( !empty($array)) {
       foreach ($array as $v => $k) {
         if (is_array($k)) {
-          $fvalue==$k[$fid]
-            ? $selected = 'selected' 
-            : $selected = '';
+          $selected = ($fvalue == $k[$fid] ? 'selected' : '');
+          $textvalue = $k[$fname];
           if ($ident) {
-            $value = str_pad($k[$fname], strlen($k[$fname]) + $k[$ident] * 2, '-', STR_PAD_LEFT);
+            $textvalue = str_pad($k[$fname], strlen($k[$fname]) + $k[$ident] * 2, '-', STR_PAD_LEFT);
           }
-          $text .= "<option value='{$k[$fid]}' {$selected}>{$value}</option>";
+          $text .= "<option value='{$k[$fid]}' {$selected}>{$textvalue}</option>";
         }
         else {
-          $value = $k->$fname;
+          $textvalue = $k->$fname;
           $fvalue==$k->$fid
             ? $selected = 'selected' 
             : $selected = '';
-          $text .= "<option value='{$k->$fid}' {$selected}>{$value}</option>";
+          $text .= "<option value='{$k->$fid}' {$selected}>{$textvalue}</option>";
         }
       }
     }

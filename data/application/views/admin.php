@@ -12,7 +12,7 @@
 
     <ul class="nav" id="main_nav">
       <li class="nav-item">
-        <a class="nav-link" href="/admin/advert">Объявления</a>
+        <a class="nav-link" href="/admin/adverts">Объявления</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/admin/category">Категории</a>

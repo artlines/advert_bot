@@ -118,6 +118,27 @@ $(function() {
   users.searchText().keyup(function () {
     users.search();
   });
+
+  var adverts = {
+    listBlock: function () {
+      return adminObject.listPanel.find('.adverts-list');
+    },
+    searchText: function () {
+      return adminObject.listPanel.find('.adverts-search');
+    },
+    nav: function () {
+      return adminObject.listPanel.find('.advert-nav');
+    },
+    search: function () {
+      adverts.listBlock().load(urlAdminPrefix + 'adverts/search/', {text: adverts.searchText().val()}, function () {
+        adminObject.initEditActions();
+      });
+    }
+  };
+  adverts.search();
+  adverts.searchText().keyup(function () {
+    adverts.search();
+  });
 });
 
 function adaptiveMenu(window_width) {

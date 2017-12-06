@@ -26,6 +26,20 @@
     $data = $CI->db->get($table)->result_array();
     return in_select($name, $data, $params);
   }
+
+  /**
+   * Получить значение из справочника
+   * @author Alexey
+   */
+  function outTable($params) {
+    $CI = &get_instance();
+    $result = $CI->db->query("
+      SELECT `{$params['name']}` 
+      FROM `{$params['table']}` 
+      WHERE `{$params['ident']}` = '{$params['value']}'
+    ")->row()->{$params['name']};
+    return $result;
+  }
   
   /**
    * array debug function

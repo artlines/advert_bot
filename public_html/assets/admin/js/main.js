@@ -129,8 +129,15 @@ $(function() {
     nav: function () {
       return adminObject.listPanel.find('.advert-nav');
     },
-    search: function () {
-      adverts.listBlock().load(urlAdminPrefix + 'adverts/search/', {text: adverts.searchText().val()}, function () {
+    navItem: function () {
+      return this.nav().find('.page-link');
+    },
+    search: function (page) {
+      if (typeof page == 'undefined') {
+        page = 1;
+      }
+      page = parseInt(page) - 1;
+      adverts.listBlock().load(urlAdminPrefix + 'adverts/search/', {text: adverts.searchText().val(), page: page}, function () {
         adminObject.initEditActions();
       });
     }
@@ -139,6 +146,11 @@ $(function() {
   adverts.searchText().keyup(function () {
     adverts.search();
   });
+  adverts.navItem().click(function (e) {
+    e.preventDefault();
+    var page = $(this).attr('data-id');
+    adverts.search(page);
+  })
 });
 
 function adaptiveMenu(window_width) {

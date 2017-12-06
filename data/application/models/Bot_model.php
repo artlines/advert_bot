@@ -58,7 +58,7 @@ class Bot_model extends CI_Model
     $regions = $this->db->query("
       SELECT id, name 
       FROM region
-      WHERE id IN ('{$ids}')
+      WHERE id IN ({$ids})
     ")->result();
 
     foreach ($regions as $region) {
@@ -76,7 +76,7 @@ class Bot_model extends CI_Model
     $categories = $this->db->query("
       SELECT id, name 
       FROM category
-      WHERE id IN ('{$ids}')
+      WHERE id IN ({$ids})
     ")->result();
 
     foreach ($categories as $category) {
@@ -141,7 +141,6 @@ class Bot_model extends CI_Model
   {
     if($advert_id){
       $advert = $this->db->where('id', $advert_id)->get('advert')->row();
-      file_put_contents(LOG, print_r($advert, 1));
 
       return $this->db->update('advert',
         [

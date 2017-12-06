@@ -6,6 +6,7 @@
  * @property CI_Session $session
  * @property User_model $user_model
  * @property Adverts_model $adverts_model
+ * @property Telegraph $telegraph
  */
 class Admin extends MX_Controller {
   
@@ -149,6 +150,39 @@ class Admin extends MX_Controller {
    * @author Alexey
    */
   function _adverts_default() {
+    $this->load->library('telegraph');
+
+    /*$res = $this->telegraph->getPage(['path' => 'Story-with-image-12-06', 'return_content' => true]);
+    adebug(json_encode($res->result->content));
+
+    $content = '[{"tag":"figure","children":[{"tag":"img","attrs":{"src":"https:\/\/advert.artline.me\/ad-images/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg"}},{"tag":"figcaption","children":[""]}]},{"tag":"p","children":[{"tag":"br"}]}]';
+    //'[{"tag":"p","children":"Hello"},{"tag":"figure","children":[{"tag":"img","attrs":{"src":"https:\/\/advert.artline.me\/ad-images/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg"}}]';
+    echo $content;
+    $items = $this->telegraph->editPage([
+      'access_token'  => Telegraph::ACCESS_TOKEN,
+      'path'          => 'my-titile-12-06',
+      'title'         => 'my titile',
+      'content'       => $content
+    ]);
+    print_r($items);
+    exit;
+
+    $url = 'http://telegra.ph/upload/';
+    $img = '/home/advert/web/advert.artline.me/data/application/logs/AgADAgADiqgxG8DO8UgQO9B_2fA-oAv8Mg4ABBMMVF9ao7eFcf4AAgI.jpg';
+    $ch = curl_init($url);
+    $fp = fopen($img, 'wb');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    fclose($fp);
+    adebug($res);
+    exit;*/
+
+    /*$res = $this->telegraph->createAccount([
+      'short_name'   => 'Adverts',
+      'author_name'  => 'Crypty Bot Advert'
+    ]); adebug($res);exit;*/
     $count = $this->adverts_model->count();
     $this->view->set('count', $count);
     return $this->view->render('/admin/adverts/main');
@@ -159,7 +193,11 @@ class Admin extends MX_Controller {
    * @author Alexey
    */
   function _adverts_search() {
-    $items = $this->adverts_model->find(['limit' => self::ADVERT_PAGINATION_SIZE, 'search' => $this->params['post']['text']]);
+    $items = $this->adverts_model->find([
+      'limit'   => self::ADVERT_PAGINATION_SIZE,
+      'search'  => $this->params['post']['text'],
+      'offset'  => (int)$this->params['post']['page'] * self::ADVERT_PAGINATION_SIZE
+    ]);
     $this->load->view('/admin/adverts/list', ['items' => $items]);
   }
 
@@ -173,6 +211,20 @@ class Admin extends MX_Controller {
     $this->load->view('/admin/adverts/editForm', $info);
   }
 
+  /**
+   * Редактировать Объявление
+   * @author Alexey
+   */
+  function _adverts_edit() {
+    $id = (int)$this->uri->segment(4);
+    try {
+      $this->adverts_model->set($id, $this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
   ##########################################################################
   ### USERS
   ##########################################################################

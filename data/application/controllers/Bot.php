@@ -34,6 +34,7 @@ class Bot extends MX_Controller {
   {
     parent::__construct();
     $this->load->library('telegram/telegram.php');
+    $this->load->library('pagination/InlineKeyboardPagination.php');
     $this->load->model('bot_model');
   }
   /**
@@ -62,13 +63,12 @@ class Bot extends MX_Controller {
     $ts->register_trigger_error("trigger_err", "*");
 
     $response = $ts->run($bot, $message);
-    file_put_contents(LOG, print_r($response,1), FILE_APPEND);
 
   }
 
   /**
    * Триггер-старт
-  */
+   */
   public function welcome($p)
   {
     try {
@@ -129,7 +129,7 @@ class Bot extends MX_Controller {
 
   /**
    * Триггер на размещение
-  */
+   */
   public function setAdvert($p)
   {
     try{
@@ -141,14 +141,16 @@ class Bot extends MX_Controller {
         'user_type' => 'set'
       ];
       $user_state = $this->_get_user_state($data);
-      $regions = $this->bot_model->getRegionsById($user_state->region_id);
+      if($user_state->region_id){
+        $regions = $this->bot_model->getRegionsById($user_state->region_id);
+      }
 
       if (!$user_state->region_id){
         return $this->getRegion($p);
       }elseif (!$user_state->category_id && $regions){
         return $this->getCategory($p, $regions);
       }else{
-        
+
         $advert = $this->bot_model->getAdvertText($user_state->advert_id);
         $advert_file = $this->bot_model->getAdvertFiles($user_state);
 
@@ -208,7 +210,7 @@ class Bot extends MX_Controller {
 
   /**
    * Записать объявление
-  */
+   */
   public function setAdvertText($p, $action)
   {
     try{
@@ -304,7 +306,7 @@ class Bot extends MX_Controller {
 
   /**
    * Предоставить выбор региона
-  */
+   */
   public function getRegion($p)
   {
     try {
@@ -314,10 +316,31 @@ class Bot extends MX_Controller {
       foreach ($regions as $region){
         $list[] = $region->name;
       }
-      //знает только регионы и позволяет их ввести
-      $keyboard = [$list];
+    /*  $chunked = array_chunk($list, 3);
+      $count = array_keys($chunked);
+      $items         = $count; // required.
+      $command       = 'regionPage'; // optional. Default: pagination
+      $selected_page = 1;            // optional. Default: 1
+      $labels        = [              // optional. Change button labels (showing defaults)
+        'default'  => '%d',
+        'first'    => '« %d',
+        'previous' => '‹ %d',
+        'current'  => '· %d ·',
+        'next'     => '%d ›',
+        'last'     => '%d »',
+      ];
+      $ikp = new InlineKeyboardPagination($items, $command);
+      $ikp->setMaxButtons(6, true); // Second parameter set to always show 7 buttons if possible.
+      $ikp->setLabels($labels);
+      $pagination = $ikp->getPagination($selected_page);
 
-      $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
+      $chunked = array_chunk($list, 3);
+      foreach ($chunked as $key => $chunk){
+        $chunked[$key] = implode(',', $chunk);
+      }
+      $chunked[] = $pagination['keyboard'][0]['text'];
+      file_put_contents(LOG, print_r($chunked, 1));*/
+      $reply = json_encode(["keyboard" => [$list]]);
       $p->bot()->send_message($p->chatid(), $answer, null, $reply);
       $p->state()->movetostate("in_chat");
 
@@ -329,7 +352,7 @@ class Bot extends MX_Controller {
 
   /**
    * Предоставить выбор категории
-  */
+   */
   public function getCategory($p, $regions)
   {
     try {
@@ -355,7 +378,7 @@ class Bot extends MX_Controller {
   /**
    * Текстовый триггер
    * - всё, что не попало в обработку другими триггерами
-  */
+   */
   public function text($p)
   {
     try {
@@ -415,7 +438,7 @@ class Bot extends MX_Controller {
 
   /**
    * Очистить состояние юзера и начать сначала
-  */
+   */
   public function clearState($p)
   {
     $post = $p->bot()->read_post_message();
@@ -444,7 +467,7 @@ class Bot extends MX_Controller {
 
   /**
    * При возникновении ошибки
-  */
+   */
   public function error($p)
   {
     $answer = "Что-то пошло не так, попробуйте еще раз!";
@@ -493,3 +516,4 @@ function trigger_err($p) {
   $bot = new Bot($p);
   return $bot->error($p);
 }
+

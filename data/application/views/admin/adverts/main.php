@@ -12,7 +12,7 @@
     <nav aria-label="Page navigation ">
       <ul class="pagination pagination-sm justify-content-center advert-nav">
         <? for ($i = 1; $i <= ceil($count / Admin::ADVERT_PAGINATION_SIZE); $i++ ): ?>
-          <li class="page-item"><a class="page-link" href="#" attr-id="<?=$i;?>"><?=$i;?></a></li>
+          <li class="page-item"><a class="page-link" href="#" data-id="<?=$i;?>"><?=$i;?></a></li>
         <? endfor;?>
       </ul>
     </nav>

@@ -7,6 +7,8 @@
  * Time: 22:14
  * @property CI_DB_query_builder $db
  * @property Telegraph $telegraph
+ * @property MX_Loader $load
+ * @property MX_Config $config
  */
 class Adverts_model extends CI_Model
 {
@@ -81,25 +83,25 @@ class Adverts_model extends CI_Model
     ], ['id' => $id]);
     // неактивное объявление - изменение данных
     if ($info->active == $active && $active == 0) {
-      return;
+      //return;
     }
-    $this->load->library('telegraph');
     // снять с публикации - нет такого функционала у telegraph
     if (!$active) {
-
-      return;
+      //return;
     }
 
     // make content
-    $images = [
-      'https://advert.artline.me/ad-images/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg',
-      'https://advert.artline.me/ad-images/AgADAgADl6gxGzn12EgSOsWBTWpoONrwAw4ABMtFAzCSYQZN5ScAAgI.jpg'
-    ];
-    $img_string = '';
-    foreach ($images as $image) {
-      $img_string .= ', {"tag": "img", "attrs":["src": "' . $image . '"]}';
+    $content = '[{"tag":"p","children":["' . $params['content'] . '"]},';
+
+    foreach ($info->images as $key => $image) {
+      $content .= '{"tag":"figure","children":[
+        {"tag":"img","attrs":{"src":"' . $this->config->item('base_url') . $image . '"}},
+        {"tag":"figcaption","children":["Изображение ' . ($key + 1) . '"]}
+      ]},';
     }
-    $content = '[{"tag":"p","children":["' . $params['content'] . '"]} ' . $img_string . ']';
+    $content .= '{"tag":"p","children":[{"tag":"br"}]}]';
+
+    $this->load->library('telegraph');
 
     // edit
     if ($info->tg_path) {
@@ -107,9 +109,8 @@ class Adverts_model extends CI_Model
         'access_token'  => Telegraph::ACCESS_TOKEN,
         'path'          => $info->tg_path,
         'title'         => $params['title'],
-        'content'       => '<img src="https://advert.artline.me/ad-images/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg" />'//'[{"tag":"p","children":["' . $params['content'] . '"]}, {"tag": }]'
+        'content'       => $content
       ]);
-      print_r($items);
       return;
     }
 

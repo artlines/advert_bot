@@ -73,7 +73,9 @@ class telegram_bot {
 			if(isset($data)) curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		}
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		return curl_exec($ch);
+		$result = curl_exec($ch);
+		file_put_contents(LOG, print_r($result, 1));
+		return $result;
 	}
 
 	private function file_request($file_path) {

@@ -53,6 +53,22 @@
         </label>
       </div>
 
+      <? if ($images):?>
+      <div class="form-group">
+        <div>Изображения</div>
+        <? foreach ($images as $key => $image):?>
+        <div><a href="<?=$image;?>" data-lightbox="roadtrip">Image #<?=($key + 1);?></a></div>
+        <? endforeach;?>
+      </div>
+      <? endif;?>
+
+      <? if ($tg_url != ''):?>
+      <div class="form-group">
+        <div>Ссылка в telegraph</div>
+        <div><a href="<?=$tg_url;?>" target="_blank"><?=$tg_path;?></a></div>
+      </div>
+      <? endif;?>
+
       <div class="form-group">
         <button class="btn btn-info" name="submit" type="submit">Сохранить</button>
       </div>

@@ -1,0 +1,12 @@
+{
+    "name": "advert/advert.artline.me",
+    "authors": [
+        {
+            "name": "Artur",
+            "email": "luart004@gmail.com"
+        }
+    ],
+    "require": {
+        "php-telegram-bot/inline-keyboard-pagination": "^1.0.0"
+    }
+}

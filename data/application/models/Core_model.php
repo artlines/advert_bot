@@ -20,16 +20,7 @@ class Core_model extends S_Model {
    * @author Alexey
    */
   function coreAction() {
-    if (!$_SESSION['city_id']) {
-      $_SESSION['city_id'] = CITY_ID_DEFAULT;
-    }
-    $this->params->current_city = $this->tovar_model->getCity($_SESSION['city_id']);
-    $this->params->current_city_shops = $this->tovar_model->findShop(['city_id' => $_SESSION['city_id']]);
-    $this->params->current_city_shop  = current((array)$this->params->current_city_shops);
-    
-    $this->deleteOldProductActions();
-    $this->loadBrands();
-    return $this->params;
+    return;
   }
   
   /**

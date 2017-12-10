@@ -54,7 +54,13 @@ class Adverts_model extends CI_Model
    */
   function get($id) {
     $id = (int)$id;
-    return $this->db->where(['id' => $id])->get('advert')->row();
+    $result = $this->db->where(['id' => $id])->get('advert')->row();
+    $images = $this->db->where(['advert_id' => $id])->get('advert_file')->result();
+    foreach ($images as $image) {
+      $file = basename($image->link);
+      $result->images[] = '/ad-images/' . $file;
+    }
+    return $result;
   }
 
   /**

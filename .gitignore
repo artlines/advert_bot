@@ -2,3 +2,5 @@ document_errors/
 logs/
 public_shtml/
 node_modules/
+public_html/ad-images
+vendor/

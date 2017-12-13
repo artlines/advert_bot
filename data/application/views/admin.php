@@ -24,12 +24,12 @@
       <li class="nav-item">
         <a class="nav-link" href="/admin/geo">География</a>
       </li>
-      <li class="nav-item">
+      <!--li class="nav-item">
         <a class="nav-link" href="/admin/settings">Настройки</a>
       </li>
-      <li class="nav-item">
+      <<li class="nav-item">
         <a class="nav-link" href="/admin/bot">Бот</a>
-      </li>
+      </li>-->
     </ul>
 
     <div id="content"> <?=$text;?> </div>

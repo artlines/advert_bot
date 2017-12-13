@@ -84,9 +84,21 @@ class Bot extends MX_Controller {
       ];
       $this->_get_user_state($data);
 
+
       $keyboard = [[self::STEPS['getAdvert']['action']],[self::STEPS['setAdvert']['action']]];
       $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
       $p->bot()->send_message($p->chatid(), $answer, null, $reply);
+
+      /*$keyboard = new InlineKeyboardMarkup();
+      $options = [];
+      $options[0]->text="a";
+      $options[0]->url="http://lenta.ru";
+      $options[0]->callback_data = 'text';
+      $options[1]->text="b";
+      $options[1]->url="http://e1.ru";
+      $options[1]->callback_data = 'text';
+      $keyboard->add_option($options);
+      file_put_contents('test.txt', print_r($keyboard, 1));*/
 
       return [__METHOD__ => self::STATUS_SUCCESS];
     }catch(Exception $e) {
@@ -316,7 +328,7 @@ class Bot extends MX_Controller {
       foreach ($regions as $region){
         $list[] = $region->name;
       }
-    /*  $chunked = array_chunk($list, 3);
+    /*
       $count = array_keys($chunked);
       $items         = $count; // required.
       $command       = 'regionPage'; // optional. Default: pagination
@@ -341,7 +353,28 @@ class Bot extends MX_Controller {
       $chunked[] = $pagination['keyboard'][0]['text'];
       file_put_contents(LOG, print_r($chunked, 1));*/
       $reply = json_encode(["keyboard" => [$list]]);
-      $p->bot()->send_message($p->chatid(), $answer, null, $reply);
+      $chunked = array_chunk($list, 3);
+      foreach ($chunked as $key => &$chunk){
+        foreach ($chunk as $k => $ch){
+          $chunk[$k] = [
+            'text' => $ch,
+            'callback_data' => 'text'
+          ];
+        }
+      }
+      file_put_contents(LOG, print_r($chunked, 1));
+      $p->bot()->send_message($p->chatid(), 'test message' . rand(1, 100), null, json_encode(['inline_keyboard' => [
+          $chunked[0],
+          $chunked[1],
+        [
+          ['text' => '6', 'callback_data' => 'i_6'],
+          ['text' => '7', 'callback_data' => 'i_7'],
+          ['text' => '8', 'callback_data' => 'i_8']
+        ],
+        [
+          ['text' => '9', 'callback_data' => 'i_9']
+        ]
+      ]]));
       $p->state()->movetostate("in_chat");
 
       return [__METHOD__ => self::STATUS_SUCCESS];
@@ -387,6 +420,14 @@ class Bot extends MX_Controller {
         'user_id' => $post->message->from->id,
         'previous_action' => $post->message->text
       ];
+
+ /*     if ($p == 'Ленинградская'){
+        $regions = $this->bot_model->getRegionsByName($p);
+        $data['region_id'] = $regions['ids'];
+        $user_state = $this->_get_user_state($data);
+        return true;
+
+      }*/
 
       if(in_array($data['previous_action'], self::STEPS)
         || in_array($data['previous_action'], self::STEPS['setAdvertFile'])

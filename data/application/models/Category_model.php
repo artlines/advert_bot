@@ -1,7 +1,5 @@
 <?php
-/**
- * @property CI_DB_query_builder $db
- */
+
 class Category_model extends CI_Model {
   
   /**

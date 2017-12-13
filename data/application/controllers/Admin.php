@@ -1,13 +1,5 @@
 <?php
-/**
- * @property Category_model $category_model
- * @property CI_URI $uri
- * @property View $view
- * @property CI_Session $session
- * @property User_model $user_model
- * @property Adverts_model $adverts_model
- * @property Telegraph $telegraph
- */
+
 class Admin extends MX_Controller {
   
   private $params;
@@ -152,30 +144,6 @@ class Admin extends MX_Controller {
   function _adverts_default() {
     $this->load->library('telegraph');
 
-    /*$res = $this->telegraph->getPage(['path' => 'my-titile-12-06', 'return_content' => true]);
-    adebug(json_encode($res->result->content));
-
-    $content = '[
-  {"tag":"p","children":["\u0422\u0435\u043a\u0441\u0442"]},
-  {"tag":"figure","children":[
-    {"tag":"img","attrs":{"src":"https:\/\/advert.artline.me\/ad-images\/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg"}},
-    {"tag":"figcaption","children":["\u041a\u0430\u0440\u0442\u0438\u043d\u043a\u0430 1"]}
-  ]},
-  {"tag":"p","children":[{"tag":"br"}]}
-]';
-    //'[{"tag":"p","children":"Hello"},{"tag":"figure","children":[{"tag":"img","attrs":{"src":"https:\/\/advert.artline.me\/ad-images/AgADAgAD36gxGzOs8EhTvnFUQOsCoP_oAw4ABIx3wQocFJ_1Xj8AAgI.jpg"}}]';
-    echo $content. "<br><br>";
-    $items = $this->telegraph->editPage([
-      'access_token'  => Telegraph::ACCESS_TOKEN,
-      'path'          => 'my-titile-12-06',
-      'title'         => 'Новый заголовок',
-      'content'       => $content
-    ]);
-    print_r($items);
-    exit;*/
-
-
-
     /*$res = $this->telegraph->createAccount([
       'short_name'   => 'Adverts',
       'author_name'  => 'Crypty Bot Advert'
@@ -278,6 +246,173 @@ class Admin extends MX_Controller {
     }
     echo json_encode(['err' => '']);
   }
+
+  ##########################################################################
+  ### Настройки
+  ##########################################################################
+
+  /**
+   * Настройки
+   * @author Alexey
+   */
+  function config() {
+    $this->load->model('category_model');
+    $this->methodСonstructor('config');
+  }
+
+  ##########################################################################
+  ### ГЕО
+  ##########################################################################
+
+  /**
+   * Гео - главная страница
+   * @author Alexey
+   */
+  function geo() {
+    $this->load->model('geo_model');
+    $this->methodСonstructor('geo');
+  }
+
+  /**
+   * Гео - области
+   * @author Alexey
+   */
+  function region() {
+    $this->load->model('geo_model');
+    $this->methodСonstructor('geo_region');
+  }
+
+  /**
+   * Гео - города
+   * @author Alexey
+   */
+  function city() {
+    $this->load->model('geo_model');
+    $this->methodСonstructor('geo_city');
+  }
+
+  /**
+   * Гео - список
+   * @author Alexey
+   */
+  function _geo_default() {
+    $items = $this->geo_model->find();
+    $this->view->set('items', $items);
+    return $this->view->render('/admin/geo/main');
+  }
+
+  /**
+   * Добавить область - форма
+   * @author Alexey
+   */
+  function _geo_region_addForm() {
+    return $this->load->view('/admin/geo/region_addForm');
+  }
+
+  /**
+   * Добавить город - форма
+   * @author Alexey
+   */
+  function _geo_city_addForm() {
+    return $this->load->view('/admin/geo/city_addForm');
+  }
+
+  /**
+   * Добавить область
+   * @author Alexey
+   */
+  function _geo_region_add() {
+    try {
+      $this->geo_model->add($this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
+
+  /**
+   * Добавить город
+   * @author Alexey
+   */
+  function _geo_city_add() {
+    try {
+      $this->geo_model->addCity($this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
+
+  /**
+   * Редактировать область - форма
+   * @author Alexey
+   */
+  function _geo_region_editForm() {
+    $id = (int)$this->params['post']['id'];
+    $info = $this->geo_model->get($id);
+    $this->load->view('/admin/geo/region_editForm', $info);
+  }
+
+  /**
+   * Редактировать город - форма
+   * @author Alexey
+   */
+  function _geo_city_editForm() {
+    $id = (int)$this->params['post']['id'];
+    $info = $this->geo_model->getCity($id);
+    $this->load->view('/admin/geo/city_editForm', $info);
+  }
+
+  /**
+   * Редактировать город
+   * @author Alexey
+   */
+  function _geo_city_edit() {
+    $id = (int)$this->uri->segment(4);
+    try {
+      $this->geo_model->setCity($id, $this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
+
+  /**
+   * Редактировать область
+   * @author Alexey
+   */
+  function _geo_region_edit() {
+    $id = (int)$this->uri->segment(4);
+    try {
+      $this->geo_model->set($id, $this->params['post']);
+    }
+    catch (Exception $e) {
+      echo json_encode(['err' => $e->getMessage()]);
+    }
+    echo json_encode(['err' => '']);
+  }
+
+  /**
+   * Удалить город
+   * @author Alexey
+   */
+  function _geo_city_del() {
+    $id = (int)$this->params['post']['id'];
+    $this->geo_model->delCity($id);
+  }
+
+  /**
+   * Удалить область
+   * @author Alexey
+   */
+  function _geo_region_del() {
+    $id = (int)$this->params['post']['id'];
+    $this->geo_model->del($id);
+  }
+
   ##########################################################################
   ###         SITE services and reviews
   ##########################################################################

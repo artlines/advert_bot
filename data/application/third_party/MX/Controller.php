@@ -36,6 +36,18 @@ require dirname(__FILE__).'/Base.php';
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  **/
+/**
+ * @property Category_model $category_model
+ * @property CI_URI $uri
+ * @property View $view
+ * @property CI_Session $session
+ * @property User_model $user_model
+ * @property Adverts_model $adverts_model
+ * @property Telegraph $telegraph
+ * @property Geo_model $geo_model
+ * @property CI_DB_query_builder $db
+ *
+ */
 class MX_Controller 
 {
 	public $autoload = array();

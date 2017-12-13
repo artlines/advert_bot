@@ -74,7 +74,7 @@ class telegram_bot {
 		}
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$result = curl_exec($ch);
-		file_put_contents(LOG, print_r($result, 1));
+		file_put_contents(LOG, print_r($data, 1));
 		return $result;
 	}
 
@@ -119,6 +119,7 @@ class telegram_bot {
 		if(isset($id_msg)) $data["reply_to_message_id"]=$id_msg;
 		if(isset($reply)) $data["reply_markup"]=$reply;
 		if(isset($type)) $data["parse_mode"]=$type; // "Markdown" or "HTML"; see https://core.telegram.org/bots/api#formatting-options
+		file_put_contents('api.txt', print_r($data, 1));
 		$response = $this->control_api("/sendMessage", $data);
 		return $response;
 	}

@@ -4,3 +4,5 @@ public_shtml/
 node_modules/
 public_html/ad-images
 vendor/
+public_html/api.txt
+public_html/test.txt

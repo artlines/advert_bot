@@ -119,8 +119,9 @@ class telegram_bot {
 		if(isset($id_msg)) $data["reply_to_message_id"]=$id_msg;
 		if(isset($reply)) $data["reply_markup"]=$reply;
 		if(isset($type)) $data["parse_mode"]=$type; // "Markdown" or "HTML"; see https://core.telegram.org/bots/api#formatting-options
-		file_put_contents('api.txt', print_r($data, 1));
+		file_put_contents('/home/advert/tmp/post.log', "BOT::SEND_MESSAGE: " . print_r($data, 1), FILE_APPEND);
 		$response = $this->control_api("/sendMessage", $data);
+		file_put_contents('/home/advert/tmp/post.log', "BOT::RESPONSE: " . print_r($response, 1), FILE_APPEND);
 		return $response;
 	}
 

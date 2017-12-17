@@ -24,23 +24,22 @@ class Bot_model extends CI_Model
         ],
         ['user_id' => $data['user_id']]);
     } else {
-      $this->db->insert('user_state', [
-        'previous_action' => $data['previous_action'],
-        'user_id' => $data['user_id'] ?: $previous->user_type,
-      ]);
-
-      $this->db->insert('user', [
-        'tg_id' => $data['user_id'],
-        'username' => $data['username'],
-        'firstname' => $data['first_name'],
-        'lastname' => $data['last_name'],
-      ]);
+      $this->db->insert('user_state', $data);
     }
 
     $current = $this->db->where('user_id', $data['user_id'])->get('user_state')->row();
     $current->previous_action = $previous->previous_action;
 
     return $current;
+  }
+
+  /**
+   * Получить регион
+   * @author Alexey
+   */
+  public function getRegion($id) {
+    $id = (int)$id;
+    return $this->db->where(['id' => $id])->get('region')->row();
   }
 
   public function getRegions()
@@ -58,7 +57,7 @@ class Bot_model extends CI_Model
     $regions = $this->db->query("
       SELECT id, name 
       FROM region
-      WHERE id IN ({$ids})
+      WHERE id IN ('{$ids}')
     ")->result();
 
     foreach ($regions as $region) {
@@ -76,7 +75,7 @@ class Bot_model extends CI_Model
     $categories = $this->db->query("
       SELECT id, name 
       FROM category
-      WHERE id IN ({$ids})
+      WHERE id IN ('{$ids}')
     ")->result();
 
     foreach ($categories as $category) {
@@ -140,16 +139,19 @@ class Bot_model extends CI_Model
   public function editAdvertText($data, $advert_id)
   {
     if($advert_id){
-      $advert = $this->db->where('id', $advert_id)->get('advert')->row();
+      $advert = $this->db->get('advert')->where('id', $advert_id);
+      file_put_contents(LOG, print_r($advert, 1));
 
       return $this->db->update('advert',
         [
+          'id' => $data['advert_id'],
           'title' => $data['title'] ?: $advert->title,
           'content' => $data['content'] ?: $advert->content,
         ],
         ['id' => $advert_id]
       );
     }else{
+      unset($data['previous_action']);
       $this->db->insert('advert', $data);
       $data = [
         'user_id' => $data['user_id'],
@@ -164,28 +166,9 @@ class Bot_model extends CI_Model
     return $this->db->where('id', $id)->get('advert')->row();
   }
 
-  public function getAdvertFiles($options)
-  {
-    //при выдаче добавить условия $this->db->where для типов файлов и т.д.
-    return $this->db->where('advert_id', $options->advert_id)->get('advert_file')->result();
-  }
-
-  public function setAdvertFiles($file)
-  {
-    return $this->db->insert('advert_file', $file);
-  }
-
   public function cleanUserState($id)
   {
-    return $this->db->update('user_state',
-      [
-        'category_id' => '',
-        'region_id' => '',
-        'advert_id' => '',
-        'user_type' => '',
-        'previous_action' => '',
-      ],
-      ['user_id' => $id]);
+    return $this->db->delete('user_state', ['user_id' => $id]);
   }
 }
 

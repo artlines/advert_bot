@@ -1,4 +1,8 @@
 <?
+/**
+ * @property Bot_model $bot_model
+ * @property telegram_bot $bot
+ */
 class Bot extends MX_Controller {
 
   const TELEGRAM_BOTNAME = "useCoinsBot";
@@ -30,6 +34,19 @@ class Bot extends MX_Controller {
     ]
   ];
 
+  private $commands = [
+    '/start'      => 'welcome',
+    'Смотреть'    => 'getAdvert',
+    'Разместить'  => 'setAdvert',
+    'Выберите регион или введите несколько регионов через запятую' => 'setAdvert'
+  ];
+
+  private $bot;
+  private $chat_id = null;
+  private $message = null;
+  private $user    = null;
+  private $callback = false;
+
   function __construct()
   {
     parent::__construct();
@@ -37,6 +54,18 @@ class Bot extends MX_Controller {
     $this->load->library('pagination/InlineKeyboardPagination.php');
     $this->load->model('bot_model');
   }
+
+  /**
+   * Логи
+   * @author Alexey
+   */
+  private function log($message) {
+    if (is_array($message) || is_object($message)) {
+      $message = print_r($message, 1);
+    }
+    file_put_contents('/home/advert/tmp/post.log', date("Y-m-d H:i:s") . $message . "\n", FILE_APPEND);
+  }
+
   /**
    * Основной метод обработки
    * Регистрация триггеров
@@ -44,66 +73,58 @@ class Bot extends MX_Controller {
    */
   function index()
   {
-    $bot = new telegram_bot(self::TELEGRAM_TOKEN);
-    $data = $bot->read_post_message();
-    $message = $data->message;
-    $chatid = $message->chat->id;
+    $input = file_get_contents('php://input');
+    $input = json_decode($input, true);
+    $this->log($input);
 
-    $ts = new telegram_trigger_set(self::TELEGRAM_BOTNAME, $chatid, self::SINGLE_TRIGGER);
+    $this->bot = new telegram_bot(self::TELEGRAM_TOKEN);
+    $data = $this->bot->read_post_message();
+    if ($data->message) {
+      $this->message  = $data->message->text;
+      $this->chat_id  = $data->message->chat->id;
+      $this->user     = $data->message->from;
+    }
+    elseif ($data->callback_query) {
+      $this->message  = $data->callback_query->message->text;
+      $this->chat_id  = $data->callback_query->message->chat->id;
+      $this->user     = $data->callback_query->message->from;
+      $this->callback = true;
+    }
 
-    $ts->register_trigger_any("trigger_text", "waiting_for_input");
-    $ts->register_trigger_photo("trigger_setAdvertPhoto", null);
-    $ts->register_trigger_document("trigger_setAdvertDocument", null);
-    $ts->register_trigger_text_command("trigger_welcome", [self::STEPS['start']], 0, null);
-    $ts->register_trigger_text_command("trigger_setAdvert", [self::STEPS['setAdvert']['action']], "in_chat");
-    $ts->register_trigger_text_command("trigger_getAdvert", [self::STEPS['getAdvert']['action']], "in_chat");
-    $ts->register_trigger_text_command("trigger_getRegion", [self::STEPS['getRegion']], "in_chat");
-    $ts->register_trigger_text_command("trigger_clearState", [self::STEPS['clearState']], "in_chat");
-    $ts->register_trigger_text_command("trigger_finish", [self::STEPS['finish']], 0, null);
-    $ts->register_trigger_error("trigger_err", "*");
+    // return $this->bot->send_message($this->chat_id, 'hello');
 
-    $response = $ts->run($bot, $message);
-
+    $method = $this->commands[$this->message];
+    $this->log($method);
+    if (method_exists($this, $method)) {
+      try {
+        $this->log("Run {$method}");
+        return $this->$method($data);
+      }
+      catch (Exception $e) {
+        $this->log("Error: " . $e->getMessage());
+      }
+    }
+    return;
   }
 
   /**
    * Триггер-старт
    */
-  public function welcome($p)
+  public function welcome($post)
   {
-    try {
+    $answer = "Добро пожаловать!";
+    $data = [
+      'user_id'         => $this->user->id,
+      'previous_action' => self::STEPS['start'],
+      'first_name'      => $this->user->first_name,
+      'last_name'       => $this->user->last_name,
+      'username'        => $this->user->first_name . ' ' . $this->user->last_name,
+    ];
+    $this->_get_user_state($data, $post);
 
-      $answer = "Добро пожаловать!";
-      $post = $p->bot()->read_post_message();
-      $data = [
-        'user_id' => $post->message->from->id,
-        'previous_action' => self::STEPS['start'],
-        'first_name' => $post->message->from->first_name,
-        'last_name' => $post->message->from->last_name,
-        'username' => $post->message->from->first_name.' '.$post->message->from->last_name,
-      ];
-      $this->_get_user_state($data);
-
-
-      $keyboard = [[self::STEPS['getAdvert']['action']],[self::STEPS['setAdvert']['action']]];
-      $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-      $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-
-      /*$keyboard = new InlineKeyboardMarkup();
-      $options = [];
-      $options[0]->text="a";
-      $options[0]->url="http://lenta.ru";
-      $options[0]->callback_data = 'text';
-      $options[1]->text="b";
-      $options[1]->url="http://e1.ru";
-      $options[1]->callback_data = 'text';
-      $keyboard->add_option($options);
-      file_put_contents('test.txt', print_r($keyboard, 1));*/
-
-      return [__METHOD__ => self::STATUS_SUCCESS];
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
-    }
+    $keyboard = [[self::STEPS['getAdvert']['action']], [self::STEPS['setAdvert']['action']]];
+    $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
+    $this->bot->send_message($this->chat_id, $answer, null, $reply);
   }
 
   /**
@@ -111,111 +132,115 @@ class Bot extends MX_Controller {
    */
   public function getAdvert($p)
   {
-    try{
+    $post = $p->bot()->read_post_message();
+    $data = [
+      'user_id' => $post->message->from->id,
+      'previous_action' => self::STEPS['getAdvert']['action'],
+      'user_type' => 'get'
+    ];
+    $user_state = $this->_get_user_state($data);
+    $regions = $this->bot_model->getRegionsById($user_state->region_id);
+    $categories = $this->bot_model->getCategoriesById($user_state->category_id);
 
-      $post = $p->bot()->read_post_message();
-      $data = [
-        'user_id' => $post->message->from->id,
-        'previous_action' => self::STEPS['getAdvert']['action'],
-        'user_type' => 'get'
-      ];
-      $user_state = $this->_get_user_state($data);
-      $regions = $this->bot_model->getRegionsById($user_state->region_id);
-      $categories = $this->bot_model->getCategoriesById($user_state->category_id);
-
-      if (!$user_state->region_id){
-        return $this->getRegion($p);
-      }elseif (!$user_state->category_id && $regions){
-        return $this->getCategory($p, $regions);
-      }else{
-        $answer = 'Выборочка объявлений';
-        $keyboard = [[self::STEPS['clearState']]];
-        $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-        return $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-      }
-
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
+    if (!$user_state->region_id){
+      return $this->getRegion($p);
+    }elseif (!$user_state->category_id && $regions){
+      return $this->getCategory($p, $regions);
+    }else{
+      $answer = 'Выборочка объявлений';
+      $keyboard = [[self::STEPS['clearState']]];
+      $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
+      return $p->bot()->send_message($p->chatid(), $answer, null, $reply);
     }
   }
 
   /**
    * Триггер на размещение
    */
-  public function setAdvert($p)
+  public function setAdvert($post)
   {
-    try{
+    $data = [
+      'user_id'         => $this->user->id,
+      'previous_action' => self::STEPS['setAdvert']['action'],
+      'user_type'       => 'set'
+    ];
+    $user_state = $this->_get_user_state($data);
 
-      $post = $p->bot()->read_post_message();
-      $data = [
-        'user_id' => $post->message->from->id,
-        'previous_action' => self::STEPS['setAdvert']['action'],
-        'user_type' => 'set'
-      ];
-      $user_state = $this->_get_user_state($data);
-      if($user_state->region_id){
-        $regions = $this->bot_model->getRegionsById($user_state->region_id);
+    $callback = $post->callback_query;
+    list($type, $ident) = explode('_', $callback->data);
+
+    if (!$user_state->region_id && !$this->callback) {
+      return $this->getRegion($post);
+    }
+    elseif (!$user_state->region_id && $type == 'region') {
+      $region = $this->bot_model->getRegion($ident);
+      $message = "Вы выбрали регион: " . $region->name;
+      return $this->bot->send_message($callback->message->chat->id, $message);
+    }
+
+    if ($user_state->region_id) {
+      $regions = $this->bot_model->getRegionsById($user_state->region_id);
+    }
+
+    if (!$user_state->region_id){
+
+    }
+    elseif (!$user_state->category_id && $regions) {
+      return $this->getCategory($p, $regions);
+    }
+    else {
+
+      $advert = $this->bot_model->getAdvertText($user_state->advert_id);
+      $advert_file = $this->bot_model->getAdvertFiles($user_state);
+
+      if(!$advert || !$advert->title){
+        $data = [
+          'user_id' => $post->message->from->id,
+          'previous_action' => self::STEPS['setAdvertText']['title'],
+        ];
+        $this->_get_user_state($data);
+        $answer = 'Введите заголовок';
+        $keyboard = [
+          [self::STEPS['clearState']],
+        ];
+      }elseif(!$advert->content){
+        $data = [
+          'user_id' => $post->message->from->id,
+          'previous_action' => self::STEPS['setAdvertText']['content'],
+        ];
+        $this->_get_user_state($data);
+        $answer = 'Введите текст';
+        $keyboard = [
+          [self::STEPS['clearState']],
+        ];
+      }
+      elseif ($advert->content && $advert->title && !$advert_file) {
+        $data = [
+          'user_id' => $post->message->from->id,
+          'previous_action' => self::STEPS['setAdvertText']['file'],
+        ];
+        $this->_get_user_state($data);
+        $answer = 'Добавьте картинки или файлы';
+        $keyboard = [
+          [self::STEPS['clearState']],
+        ];
+      }
+      elseif($advert_file) {
+        $data = [
+          'user_id' => $post->message->from->id,
+          'previous_action' => self::STEPS['setAdvertText']['file'],
+        ];
+        $this->_get_user_state($data);
+        $answer = 'Добавьте еще или завершите публикацию.';
+        $keyboard = [
+          [self::STEPS['finish']],
+        ];
       }
 
-      if (!$user_state->region_id){
-        return $this->getRegion($p);
-      }elseif (!$user_state->category_id && $regions){
-        return $this->getCategory($p, $regions);
-      }else{
+      $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
+      $p->bot()->send_message($p->chatid(), $answer, null, $reply);
 
-        $advert = $this->bot_model->getAdvertText($user_state->advert_id);
-        $advert_file = $this->bot_model->getAdvertFiles($user_state);
-
-        if(!$advert || !$advert->title){
-          $data = [
-            'user_id' => $post->message->from->id,
-            'previous_action' => self::STEPS['setAdvertText']['title'],
-          ];
-          $this->_get_user_state($data);
-          $answer = 'Введите заголовок';
-          $keyboard = [
-            [self::STEPS['clearState']],
-          ];
-        }elseif(!$advert->content){
-          $data = [
-            'user_id' => $post->message->from->id,
-            'previous_action' => self::STEPS['setAdvertText']['content'],
-          ];
-          $this->_get_user_state($data);
-          $answer = 'Введите текст';
-          $keyboard = [
-            [self::STEPS['clearState']],
-          ];
-        }elseif ($advert->content && $advert->title && !$advert_file){
-          $data = [
-            'user_id' => $post->message->from->id,
-            'previous_action' => self::STEPS['setAdvertText']['file'],
-          ];
-          $this->_get_user_state($data);
-          $answer = 'Добавьте картинки или файлы';
-          $keyboard = [
-            [self::STEPS['clearState']],
-          ];
-        }elseif($advert_file){
-          $data = [
-            'user_id' => $post->message->from->id,
-            'previous_action' => self::STEPS['setAdvertText']['file'],
-          ];
-          $this->_get_user_state($data);
-          $answer = 'Добавьте еще или завершите публикацию.';
-          $keyboard = [
-            [self::STEPS['finish']],
-          ];
-        }
-
-        $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-        $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-
-        return [__METHOD__ => 'success'];
-      }
-
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
+      return [__METHOD__ => 'success'];
     }
   }
 
@@ -319,68 +344,25 @@ class Bot extends MX_Controller {
   /**
    * Предоставить выбор региона
    */
-  public function getRegion($p)
-  {
-    try {
-      $answer = "Выберите регион или введите несколько регионов через запятую";
-      $regions = $this->bot_model->getRegions();
+  public function getRegion($post) {
+    $answer = "Выберите регион или введите несколько регионов через запятую";
+    $regions = $this->bot_model->getRegions();
 
-      foreach ($regions as $region){
-        $list[] = $region->name;
-      }
-    /*
-      $count = array_keys($chunked);
-      $items         = $count; // required.
-      $command       = 'regionPage'; // optional. Default: pagination
-      $selected_page = 1;            // optional. Default: 1
-      $labels        = [              // optional. Change button labels (showing defaults)
-        'default'  => '%d',
-        'first'    => '« %d',
-        'previous' => '‹ %d',
-        'current'  => '· %d ·',
-        'next'     => '%d ›',
-        'last'     => '%d »',
-      ];
-      $ikp = new InlineKeyboardPagination($items, $command);
-      $ikp->setMaxButtons(6, true); // Second parameter set to always show 7 buttons if possible.
-      $ikp->setLabels($labels);
-      $pagination = $ikp->getPagination($selected_page);
-
-      $chunked = array_chunk($list, 3);
-      foreach ($chunked as $key => $chunk){
-        $chunked[$key] = implode(',', $chunk);
-      }
-      $chunked[] = $pagination['keyboard'][0]['text'];
-      file_put_contents(LOG, print_r($chunked, 1));*/
-      $reply = json_encode(["keyboard" => [$list]]);
-      $chunked = array_chunk($list, 3);
-      foreach ($chunked as $key => &$chunk){
-        foreach ($chunk as $k => $ch){
-          $chunk[$k] = [
-            'text' => $ch,
-            'callback_data' => 'text'
-          ];
-        }
-      }
-      file_put_contents(LOG, print_r($chunked, 1));
-      $p->bot()->send_message($p->chatid(), 'test message' . rand(1, 100), null, json_encode(['inline_keyboard' => [
-          $chunked[0],
-          $chunked[1],
-        [
-          ['text' => '6', 'callback_data' => 'i_6'],
-          ['text' => '7', 'callback_data' => 'i_7'],
-          ['text' => '8', 'callback_data' => 'i_8']
-        ],
-        [
-          ['text' => '9', 'callback_data' => 'i_9']
-        ]
-      ]]));
-      $p->state()->movetostate("in_chat");
-
-      return [__METHOD__ => self::STATUS_SUCCESS];
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
+    foreach ($regions as $region){
+      $list[$region->id] = $region->name;
     }
+    $chunked = array_chunk($list, 2, true);
+    $reply = [];
+    foreach ($chunked as $key => $chunk) {
+      foreach ($chunk as $k => $ch){
+        $reply[$key][] = [
+          'text' => $ch,
+          'callback_data' => 'region_' . $k
+        ];
+      }
+    }
+    $this->log($reply);
+    $this->bot->send_message($this->chat_id, $answer, null, json_encode(['inline_keyboard' => $reply]));
   }
 
   /**
@@ -487,7 +469,7 @@ class Bot extends MX_Controller {
     return $this->welcome($p);
   }
 
-  private function _get_user_state($data)
+  private function _get_user_state($data, $post = null)
   {
     return $this->bot_model->changeUserData($data);
   }
@@ -557,4 +539,3 @@ function trigger_err($p) {
   $bot = new Bot($p);
   return $bot->error($p);
 }
-

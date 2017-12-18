@@ -38,7 +38,8 @@ class Bot extends MX_Controller {
     '/start'      => 'welcome',
     'Смотреть'    => 'getAdvert',
     'Разместить'  => 'setAdvert',
-    'Выберите регион или введите несколько регионов через запятую' => 'setAdvert'
+    'Выберите регион:' => 'setAdvert',
+    'Теперь выберите категорию:' => 'setAdvert'
   ];
 
   private $bot;
@@ -87,11 +88,9 @@ class Bot extends MX_Controller {
     elseif ($data->callback_query) {
       $this->message  = $data->callback_query->message->text;
       $this->chat_id  = $data->callback_query->message->chat->id;
-      $this->user     = $data->callback_query->message->from;
+      $this->user     = $data->callback_query->message->chat;
       $this->callback = true;
     }
-
-    // return $this->bot->send_message($this->chat_id, 'hello');
 
     $method = $this->commands[$this->message];
     $this->log($method);
@@ -112,6 +111,7 @@ class Bot extends MX_Controller {
    */
   public function welcome($post)
   {
+    $this->clearState($post);
     $answer = "Добро пожаловать!";
     $data = [
       'user_id'         => $this->user->id,
@@ -159,6 +159,7 @@ class Bot extends MX_Controller {
    */
   public function setAdvert($post)
   {
+    //return $this->welcome($post);
     $data = [
       'user_id'         => $this->user->id,
       'previous_action' => self::STEPS['setAdvert']['action'],
@@ -175,21 +176,28 @@ class Bot extends MX_Controller {
     elseif (!$user_state->region_id && $type == 'region') {
       $region = $this->bot_model->getRegion($ident);
       $message = "Вы выбрали регион: " . $region->name;
-      return $this->bot->send_message($callback->message->chat->id, $message);
+      $this->_get_user_state([
+        'user_id' => $this->user->id,
+        'region_id' => $region->id,
+        'previous_action' => self::STEPS['getRegion'],
+      ]);
+      $this->bot->send_message($callback->message->chat->id, $message);
+      return $this->getCategory($post);
     }
-
-    if ($user_state->region_id) {
-      $regions = $this->bot_model->getRegionsById($user_state->region_id);
-    }
-
-    if (!$user_state->region_id){
-
-    }
-    elseif (!$user_state->category_id && $regions) {
-      return $this->getCategory($p, $regions);
+    elseif (!$user_state->category_id && $type == 'category') {
+      $category = $this->bot_model->getCategory($ident);
+      $message = "Вы выбрали категорию: " . $category->name;
+      $this->log("'cat: ' {$category->name}");
+      $this->_get_user_state([
+        'user_id' => $this->user->id,
+        'category_id' => $category->id,
+        'previous_action' => self::STEPS['getCategory'],
+      ]);
+      $this->bot->send_message($callback->message->chat->id, $message);
+      //return $this->getCategory($post);
     }
     else {
-
+    return;
       $advert = $this->bot_model->getAdvertText($user_state->advert_id);
       $advert_file = $this->bot_model->getAdvertFiles($user_state);
 
@@ -345,22 +353,9 @@ class Bot extends MX_Controller {
    * Предоставить выбор региона
    */
   public function getRegion($post) {
-    $answer = "Выберите регион или введите несколько регионов через запятую";
+    $answer = "Выберите регион:";
     $regions = $this->bot_model->getRegions();
-
-    foreach ($regions as $region){
-      $list[$region->id] = $region->name;
-    }
-    $chunked = array_chunk($list, 2, true);
-    $reply = [];
-    foreach ($chunked as $key => $chunk) {
-      foreach ($chunk as $k => $ch){
-        $reply[$key][] = [
-          'text' => $ch,
-          'callback_data' => 'region_' . $k
-        ];
-      }
-    }
+    $reply = $this->getInlineKeyboard($regions, 'region');
     $this->log($reply);
     $this->bot->send_message($this->chat_id, $answer, null, json_encode(['inline_keyboard' => $reply]));
   }
@@ -368,105 +363,44 @@ class Bot extends MX_Controller {
   /**
    * Предоставить выбор категории
    */
-  public function getCategory($p, $regions)
+  public function getCategory($post)
   {
-    try {
-      $answer = "Отлично, найдены регионы: ".$regions['list'].'. ';
-      $answer .= "Теперь выберите каетгорию или введите несколько каетгорий через запятую: ";
-      $categories = $this->bot_model->getCategories();
-
-      foreach ($categories as $category){
-        $list[] = $category->name;
-      }
-      //знает только категории и позволяет их ввести
-      $keyboard = [$list];
-
-      $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-      $p->bot()->send_message($p->chatid(), $answer, null, $reply);
-      $p->state()->movetostate("in_chat");
-
-      return [__METHOD__ => self::STATUS_SUCCESS];
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
-    }
+    $answer = "Теперь выберите категорию:";
+    $categories = $this->bot_model->getCategories();
+    $reply = $this->getInlineKeyboard($categories, 'category');
+    $this->log($reply);
+    $this->bot->send_message($this->chat_id, $answer, null, json_encode(['inline_keyboard' => $reply]));
   }
+
   /**
-   * Текстовый триггер
-   * - всё, что не попало в обработку другими триггерами
+   * Получить инлайн-клавиатуру из массива значений
    */
-  public function text($p)
+  public function getInlineKeyboard($data, $type)
   {
-    try {
-      $post = $p->bot()->read_post_message();
-      $data = [
-        'user_id' => $post->message->from->id,
-        'previous_action' => $post->message->text
-      ];
-
- /*     if ($p == 'Ленинградская'){
-        $regions = $this->bot_model->getRegionsByName($p);
-        $data['region_id'] = $regions['ids'];
-        $user_state = $this->_get_user_state($data);
-        return true;
-
-      }*/
-
-      if(in_array($data['previous_action'], self::STEPS)
-        || in_array($data['previous_action'], self::STEPS['setAdvertFile'])
-      ){
-        return true;
-      }
-
-      $regions = $this->bot_model->getRegionsByName($post->message->text);
-      $categories = $this->bot_model->getCategoriesByName($post->message->text);
-      $data['category_id'] = $categories['ids'];
-      $data['region_id'] = $regions['ids'];
-      $user_state = $this->_get_user_state($data);
-      $user_type = $user_state->user_type;
-      $method = $user_type.'Advert';
-      $method_text = $method.'Text';
-
-      switch ($user_state->previous_action){
-
-        case self::STEPS[$method]['action']:
-          $data['previous_action'] = self::STEPS[$method]['action'];
-          $user_state = $this->_get_user_state($data);
-
-          if(!$user_state->category_id){
-            $regions = $this->bot_model->getRegionsById($user_state->region_id);
-            return $this->getCategory($p, $regions);
-          }elseif($user_state->category_id && $user_state->region_id){
-            return $this->$method($p, $user_state);
-          }
-          break;
-
-        case self::STEPS[$method_text]['title']:
-          return $this->setAdvertText($p, 'title');
-          break;
-
-        case self::STEPS[$method_text]['content']:
-          return $this->setAdvertText($p, 'content');
-          break;
-
-        default:
-          return true;
-          break;
-      }
-
-      return [__METHOD__ => self::STATUS_SUCCESS];
-    }catch(Exception $e) {
-      return [__METHOD__ => $e->getMessage()];
+    foreach ($data as $d){
+      $list[$d->id] = $d->name;
     }
+    $chunked = array_chunk($list, 2, true);
+    $reply = [];
+    foreach ($chunked as $key => $chunk) {
+      foreach ($chunk as $k => $ch){
+        $reply[$key][] = [
+          'text' => $ch,
+          'callback_data' => $type .'_'. $k
+        ];
+      }
+    }
+    return $reply;
   }
+
+
 
   /**
    * Очистить состояние юзера и начать сначала
    */
-  public function clearState($p)
+  public function clearState($post)
   {
-    $post = $p->bot()->read_post_message();
-    $this->bot_model->cleanUserState($post->message->from->id);
-    return $this->welcome($p);
+    return $this->bot_model->cleanUserState($this->user->id);
   }
 
   private function _get_user_state($data, $post = null)

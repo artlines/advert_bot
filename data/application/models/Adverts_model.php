@@ -35,6 +35,16 @@ class Adverts_model extends CI_Model
     if ($params['search']) {
       $where['title LIKE'] = "%{$params['search']}%";
     }
+    if ($params['active']) {
+      $where['active'] = (int)$params['active'];
+    }
+    if ($params['category_id']) {
+      $where['category_id'] = $params['category_id'];
+    }
+    if ($params['region_id']) {
+      $where['region_id'] = $params['region_id'];
+    }
+
     return $this->db
       ->where($where)
       ->order_by('tm DESC')

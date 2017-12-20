@@ -74,7 +74,7 @@ class telegram_bot {
 		}
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		$result = curl_exec($ch);
-		file_put_contents(LOG, print_r($data, 1));
+		//file_put_contents(LOG, print_r($data, 1), FILE_APPEND);
 		return $result;
 	}
 

@@ -5,11 +5,6 @@
  */
 class Bot extends MX_Controller {
 
-  const TELEGRAM_BOTNAME = "useCoinsBot";
-  const TELEGRAM_TOKEN = "460714669:AAErsCG--kFH1S2tjimjL9rvYBwA7a2glfk";
-  const SINGLE_TRIGGER = FALSE;
-  const STATUS_SUCCESS = "success";
-  const STATUS_ERROR = "error";
   const STEPS = [
     "getRegion" => "Выбрать регион",
     "getCategory" => "Выбрать категорию",
@@ -23,25 +18,29 @@ class Bot extends MX_Controller {
     ],
     "setAdvertFile" => [
       "photo" => "Добавьте картинки:",
-      "file" => "Добавьте файлы:",
     ],
     "getAdvert" => [
       "action" => "Смотреть",
-      "textAnswer" => "Выборочка",
     ],
     "clearState" => "Начать сначала",
     "finish" => "Опубликовать",
     'helpMe' => 'Помощь'
   ];
 
-  const ADMIN_TG = 258895464;
-
+  private $admin_tg = null;
+  private $token_tg = null;
+  private $bot;
+  private $chat_id = null;
+  private $message = null;
+  private $photo = null;
+  private $user    = null;
+  private $callback = false;
   private $commands = [
     '/start'      => 'welcome',
     'Смотреть'    => 'getAdvert',
     'Разместить'  => 'setAdvert',
-    'Выберите регион:' => 'setAdvert',
-    'Теперь выберите категорию:' => 'setAdvert',
+    'Выберите регион:' => 'Advert',
+    'Теперь выберите категорию:' => 'Advert',
     'Введите заголовок:' => 'setAdvertText',
     'Введите текст:' => 'setAdvertText',
     'Добавьте картинки:' => 'setAdvertPhoto',
@@ -50,19 +49,13 @@ class Bot extends MX_Controller {
     'Помощь' => 'helpMe'
   ];
 
-  private $bot;
-  private $chat_id = null;
-  private $message = null;
-  private $photo = null;
-  private $user    = null;
-  private $callback = false;
-
   function __construct()
   {
     parent::__construct();
     $this->load->library('telegram/telegram.php');
-    $this->load->library('pagination/InlineKeyboardPagination.php');
     $this->load->model('bot_model');
+    $this->admin_tg = config('admin_tg');
+    $this->token_tg = config('token_tg');
   }
 
   /**
@@ -86,8 +79,7 @@ class Bot extends MX_Controller {
     $input = file_get_contents('php://input');
     $input = json_decode($input, true);
     $this->log($input);
-
-    $this->bot = new telegram_bot(self::TELEGRAM_TOKEN);
+    $this->bot = new telegram_bot($this->token_tg);
     $data = $this->bot->read_post_message();
     if ($data->message) {
       $this->message  = $data->message->text;
@@ -102,9 +94,13 @@ class Bot extends MX_Controller {
       $this->callback = true;
     }
 
-    $method = $this->commands[$this->message];
     $user_state = $this->_get_user_state(['user_id' => $this->user->id]);
+    $this->commands['Выберите регион:'] = $user_state->user_type.$this->commands['Выберите регион:'];
+    $this->commands['Теперь выберите категорию:'] = $user_state->user_type.$this->commands['Теперь выберите категорию:'];
+    $method = $this->commands[$this->message];
+
     $this->log($method);
+
     if (method_exists($this, $method)) {
       try {
         $this->log("Run {$method}");
@@ -132,7 +128,7 @@ class Bot extends MX_Controller {
    */
   public function welcome($post)
   {
-    $answer = $this->load->view('welcome_message', ['admin' => self::ADMIN_TG], true);
+    $answer = $this->load->view('welcome_message', ['admin' => $this->admin_tg], true);
 
     $data = [
       'user_id'         => $this->user->id,
@@ -144,7 +140,7 @@ class Bot extends MX_Controller {
     $this->_get_user_state($data, $post);
 
     $keyboard = [[self::STEPS['getAdvert']['action']], [self::STEPS['setAdvert']['action']], [self::STEPS['clearState']],[self::STEPS['helpMe']]];
-    $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
+    $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true]);
     $this->bot->send_message($this->chat_id, $answer, null, $reply, "HTML");
   }
 
@@ -154,6 +150,7 @@ class Bot extends MX_Controller {
   public function getAdvert($post)
   {
     //return $this->welcome($post);
+    $this->load->model('adverts_model');
     $data = [
       'user_id' => $this->user->id,
       'previous_action' => self::STEPS['getAdvert']['action'],
@@ -161,18 +158,58 @@ class Bot extends MX_Controller {
     ];
     $user_state = $this->_get_user_state($data);
 
-    if (!$user_state->region_id){
+    $callback = $post->callback_query;
+    list($type, $ident) = explode('_', $callback->data);
+
+
+    if (!$user_state->region_id && !$this->callback) {
       return $this->getRegion($post);
-    }elseif (!$user_state->category_id){
+    }
+
+    elseif (!$user_state->region_id && $type == 'region') {
+      $region = $this->bot_model->getRegion($ident);
+      $message = "Вы выбрали регион: " . $region->name;
+      $this->_get_user_state([
+        'user_id' => $this->user->id,
+        'region_id' => $region->id,
+        'previous_action' => self::STEPS['getRegion'],
+      ]);
+      $this->bot->send_message($callback->message->chat->id, $message);
       return $this->getCategory($post);
-    }else{
-      $answer = 'Выборочка объявлений';
+    }
+
+    elseif ($user_state->category_id >= 0 && $type == 'category' && !$post->nextText) {
+      $category = $this->bot_model->getCategory($ident);
+      $message = "Вы выбрали категорию: " . $category->name;
+      $this->_get_user_state([
+        'user_id' => $this->user->id,
+        'category_id' => $category->id,
+        'previous_action' => self::STEPS['getCategory'],
+      ]);
+      $this->bot->send_message($callback->message->chat->id, $message);
+      $post->nextText = true;
+      return $this->getAdvert($post);
+    }
+
+    else{
+      $data = [
+        'active' => 1,
+        'category_id' => $user_state->category_id,
+        'region_id' => $user_state->region_id
+      ];
+      
+      $adverts = $this->adverts_model->find($data);
+      $this->log($adverts);
+      if (!empty($adverts)){
+        $answer = $this->load->view('adverts_list', ['adverts' => $adverts], true);
+      }else{
+        $answer = 'По Вашему запросу ничего не найдено.';
+      }
       $keyboard = [[self::STEPS['clearState']],[self::STEPS['helpMe']]];
       $reply = json_encode(["keyboard" => $keyboard,"resize_keyboard" => true,"one_time_keyboard" => true]);
-      $this->bot->send_message($this->chat_id, $answer, null, $reply);
+      $this->bot->send_message($this->chat_id, $answer, null, $reply, "HTML");
     }
     return;
-
   }
 
   /**
@@ -209,7 +246,7 @@ class Bot extends MX_Controller {
       return $this->getCategory($post);
     }
 
-    elseif (!$user_state->category_id && $type == 'category') {
+    elseif ($user_state->category_id >= 0 && $type == 'category' && !$post->nextText) {
       $category = $this->bot_model->getCategory($ident);
       $message = "Вы выбрали категорию: " . $category->name;
       $this->_get_user_state([
@@ -218,6 +255,7 @@ class Bot extends MX_Controller {
         'previous_action' => self::STEPS['getCategory'],
       ]);
       $this->bot->send_message($callback->message->chat->id, $message);
+      $post->nextText = true;
       return $this->setAdvert($post);
     }
     
@@ -379,7 +417,7 @@ class Bot extends MX_Controller {
    */
   public function finish($p)
   {
-    $answer = "Спасибо, Ваше объявление добавлено и ожидает модерации!";
+    $answer = config('finish');
     $keyboard = [
       [self::STEPS['clearState']],[self::STEPS['helpMe']],
     ];
@@ -395,7 +433,7 @@ class Bot extends MX_Controller {
 
   public function helpMe($post)
   {
-    $answer = $this->load->view('help_me_message', ['admin' => self::ADMIN_TG], true);
+    $answer = $this->load->view('help_me_message', ['admin' => $this->admin_tg], true);
     $keyboard = [
       [self::STEPS['clearState']],[self::STEPS['helpMe']],
     ];

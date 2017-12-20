@@ -7,6 +7,7 @@
  * Time: 22:14
  * @property CI_DB_query_builder $db
  * @property Telegraph $telegraph
+ * @property User_model $user_model
  * @property MX_Loader $load
  * @property MX_Config $config
  */
@@ -16,6 +17,7 @@ class Adverts_model extends CI_Model
 
   function __construct() {
     parent::__construct();
+    $this->load->model('user_model');
   }
 
   /**
@@ -45,11 +47,17 @@ class Adverts_model extends CI_Model
       $where['region_id'] = $params['region_id'];
     }
 
-    return $this->db
+    $result = $this->db
       ->where($where)
       ->order_by('tm DESC')
       ->get('advert')
       ->result();
+
+    foreach ($result as $key => $item) {
+      $result[$key]->user = $this->user_model->getByTgId($item->user_id);
+    }
+
+    return $result;
   }
 
   /**

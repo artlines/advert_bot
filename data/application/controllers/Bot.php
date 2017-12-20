@@ -197,7 +197,7 @@ class Bot extends MX_Controller {
         'category_id' => $user_state->category_id,
         'region_id' => $user_state->region_id
       ];
-      
+
       $adverts = $this->adverts_model->find($data);
       $this->log($adverts);
       if (!empty($adverts)){

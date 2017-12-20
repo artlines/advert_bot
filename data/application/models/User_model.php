@@ -47,6 +47,15 @@ class User_model extends CI_Model {
   }
 
   /**
+   * Получить юзера телеграма
+   * @author Alexey
+   */
+  function getByTgId($id) {
+    $id = (int)$id;
+    return $this->db->where(['tg_id' => $id])->get('user')->row();
+  }
+
+  /**
    * Изменить юзера
    * @author Alexey
    */

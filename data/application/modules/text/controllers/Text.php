@@ -8,12 +8,12 @@ class Text extends S_Module {
   
   function runModule($razdel_info) { 
     $params = array(
-      'fields' => 'text', 
+      'fields' => 'content',
       'active' => 1
     );
     $mod = new stdClass();
     $razdel = $this->razdel_model->Get($razdel_info->id, $params);
-    $mod->text    = $razdel->text;
+    $mod->text    = html_entity_decode($razdel->text);
     $mod->is_ajax = $this->params['post']['ajax'];
     return $mod;
   }

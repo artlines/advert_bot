@@ -12,7 +12,7 @@ $(function() {
     $('#main_nav').slideToggle();
   });
 
-  var adminObject = {
+  var adminObject = { 
     actionPanel: $("#action-panel"),
     listPanel: $("#list-panel"),
     editButton: function () {

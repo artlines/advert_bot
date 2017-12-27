@@ -166,6 +166,14 @@ class Bot extends MX_Controller {
       return $this->getRegion($post);
     }
 
+    elseif (!$user_state->region_id && $type == 'next') {
+      return $this->getRegion($post, $ident);
+    }
+
+    elseif (!$user_state->region_id && $type == 'prev') {
+      return $this->getRegion($post, $ident);
+    }
+
     elseif (!$user_state->region_id && $type == 'region') {
       $region = $this->bot_model->getRegion($ident);
       $message = "Вы выбрали регион: " . $region->name;
@@ -176,6 +184,14 @@ class Bot extends MX_Controller {
       ]);
       $this->bot->send_message($callback->message->chat->id, $message);
       return $this->getCategory($post);
+    }
+
+    elseif (!$user_state->category_id && $type == 'next') {
+      return $this->getCategory($post, $ident);
+    }
+
+    elseif (!$user_state->category_id && $type == 'prev') {
+      return $this->getCategory($post, $ident);
     }
 
     elseif ($user_state->category_id >= 0 && $type == 'category' && !$post->nextText) {
@@ -234,6 +250,14 @@ class Bot extends MX_Controller {
       return $this->getRegion($post);
     }
 
+    elseif (!$user_state->region_id && $type == 'next') {
+      return $this->getRegion($post, $ident);
+    }
+
+    elseif (!$user_state->region_id && $type == 'prev') {
+      return $this->getRegion($post, $ident);
+    }
+
     elseif (!$user_state->region_id && $type == 'region') {
       $region = $this->bot_model->getRegion($ident);
       $message = "Вы выбрали регион: " . $region->name;
@@ -244,6 +268,14 @@ class Bot extends MX_Controller {
       ]);
       $this->bot->send_message($callback->message->chat->id, $message);
       return $this->getCategory($post);
+    }
+
+    elseif (!$user_state->category_id && $type == 'next') {
+      return $this->getCategory($post, $ident);
+    }
+
+    elseif (!$user_state->category_id && $type == 'prev') {
+      return $this->getCategory($post, $ident);
     }
 
     elseif ($user_state->category_id >= 0 && $type == 'category' && !$post->nextText) {
@@ -364,28 +396,28 @@ class Bot extends MX_Controller {
   /**
    * Предоставить выбор региона
    */
-  public function getRegion($post) {
+  public function getRegion($post, $page=0) {
     $answer = "Выберите регион:";
     $regions = $this->bot_model->getRegions();
-    $reply = $this->getInlineKeyboard($regions, 'region');
+    $reply = $this->getInlineKeyboard($regions, 'region', $page);
     $this->bot->send_message($this->chat_id, $answer, null, json_encode(['inline_keyboard' => $reply]));
   }
 
   /**
    * Предоставить выбор категории
    */
-  public function getCategory($post)
+  public function getCategory($post, $page=0)
   {
     $answer = "Теперь выберите категорию:";
     $categories = $this->bot_model->getCategories();
-    $reply = $this->getInlineKeyboard($categories, 'category');
+    $reply = $this->getInlineKeyboard($categories, 'category', $page);
     $this->bot->send_message($this->chat_id, $answer, null, json_encode(['inline_keyboard' => $reply]));
   }
 
   /**
    * Получить инлайн-клавиатуру из массива значений
    */
-  public function getInlineKeyboard($data, $type)
+  public function getInlineKeyboard($data, $type, $page)
   {
     foreach ($data as $d){
       $list[$d->id] = $d->name;
@@ -400,6 +432,38 @@ class Bot extends MX_Controller {
         ];
       }
     }
+    $reply_chunked = array_chunk($reply, 2);
+    $reply = $reply_chunked[$page];
+
+    //пагинация
+    if(count($reply) < 1){
+      $next = [
+        'text' => 'В начало',
+        'callback_data' => 'prev_0'
+      ];
+    }else{
+      $next = [
+        'text' => '>',
+        'callback_data' => 'next_'. ($page + 1)
+      ];
+    }
+
+    $this->log($next);
+
+    if($page > 0){
+      $prev = [
+        'text' => '<',
+        'callback_data' => 'prev_'. ($page - 1)
+      ];
+    }else{
+      $prev = [
+        'text' => '<',
+        'callback_data' => 'prev_0'
+      ];
+    }
+
+
+    $reply[] = [$prev, $next];
     return $reply;
   }
 

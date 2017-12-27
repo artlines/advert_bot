@@ -26,21 +26,23 @@ class Razdel_model extends CI_Model {
       $where["position(url in '{$params['url_like']}') = "] = 1;
       unset($params['url_like']);
     }
-     $fields = ($params['fields'] ? $params['fields'] : '*');
+    $fields = ($params['fields'] ? $params['fields'] : '*');
     unset($params['fields']);
     $where = array_merge($where, (array)$params);
     $query = $this->db->select("{$fields}, tm_upd as date")
-                      ->from("resource")
-                      ->where($where)
-                      ->order_by("url DESC")
-                      ->get();
+      ->from("resource")
+      ->where($where)
+      ->order_by("url DESC")
+      ->get();
     if ( is_numeric($id) > 0 ) {
       $res = $query->row();
+      //Проверка на ресурс замены
+      if ($res->replace_id){
+      }
       isset($res->content) ? $res->text = htmlspecialchars_decode($res->content) : 0;
     }
     else {
       $res = $query->result();
-      //adebug($res);
     }
     return $res;
   }
@@ -187,20 +189,35 @@ class Razdel_model extends CI_Model {
    */
   function getSeoPage($path) {
     $path = str_replace('/?', '?', $path);
-    $res = $this->db->query("
+    $res = $res = $this->getResourceViaUrl($path);
+
+    if(!$res){
+      list($url, $params) = explode('?', $path);
+      $res = $this->getResourceViaUrl($url);
+    }
+
+    @$res->text         = htmlspecialchars_decode($res->content);
+    @$res->footer_text  = htmlspecialchars_decode($res->content_bottom);
+    @$res->befor_text   = htmlspecialchars_decode($res->content_top);
+
+    return $res;
+  }
+
+  /**
+   * получить ресурс по url
+   * @return object;
+   */
+  function getResourceViaUrl($url)
+  {
+    return $this->db->query("
       SELECT max(id) as id, parent_id, object_id, title, h1, url, name,
-      description, keywords, content, content_top, content_bottom
+      description, keywords, content, content_top, content_bottom, replace_id
       FROM resource
-      WHERE url='{$path}'
+      WHERE url='{$url}'
       GROUP BY parent_id, object_id, title, h1, url, name,
       description, keywords, content, content_top, content_bottom
       ORDER BY id DESC  
       ")->row();
-//    adebug($res);
-    @$res->text         = htmlspecialchars_decode($res->content);
-    @$res->footer_text  = htmlspecialchars_decode($res->content_bottom);
-    @$res->befor_text   = htmlspecialchars_decode($res->content_top);
-    return $res;
   }
 
   /**
@@ -219,7 +236,7 @@ class Razdel_model extends CI_Model {
     );
     $params = array_intersect_key($params, $valid);
     $isset = $this->getSeoPage($path);
-      // удалить пустой абзац в конце
+    // удалить пустой абзац в конце
     $params['befor_text'] = preg_replace('/&lt;p&gt;\s*(?:&amp;nbsp;)?\s*&lt;\/p&gt;$/','', $params['befor_text']);
     if ($isset->id) {
       $res = $this->db->update('resource_seo', $params, array('path' => $path));
@@ -232,17 +249,17 @@ class Razdel_model extends CI_Model {
 
   /**
    * Извлекает страницы с выборками фильтра
-  */
+   */
   function getFilterSEOPages(){
-      $res = $this->db
-          ->where('path LIKE \'%param%\' AND path NOT LIKE \'%single/yes%\' AND
+    $res = $this->db
+      ->where('path LIKE \'%param%\' AND path NOT LIKE \'%single/yes%\' AND
             (path LIKE \'%/price/%\' OR path LIKE \'%/filtres/%\' OR path LIKE \'%/color/%\' OR path LIKE \'%/size/%\')')
-          ->get('resource_seo')
-          ->result();
+      ->get('resource_seo')
+      ->result();
 //      path LIKE '%param%' AND path NOT LIKE '%single/yes%' AND (path LIKE '%/price/%' OR path LIKE '%/filtres/%' OR path LIKE '%/color/%')
-      return $res;
+    return $res;
   }
-  
+
   function getTemplates(){
     $result = $this->db->get('resource_templates')->result();
     foreach ($result as $res){

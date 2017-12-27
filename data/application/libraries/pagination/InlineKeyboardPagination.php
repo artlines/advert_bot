@@ -54,7 +54,7 @@ class InlineKeyboardPagination implements InlineKeyboardPaginator
      */
     public function setMaxButtons(int $max_buttons = 5, bool $force_button_count = false): InlineKeyboardPagination
     {
-        if ($max_buttons < 5 || $max_buttons > 8) {
+        if ($max_buttons < 2 || $max_buttons > 8) {
             throw new InlineKeyboardPaginationException('Invalid max buttons, must be between 5 and 8.');
         }
         $this->max_buttons        = $max_buttons;

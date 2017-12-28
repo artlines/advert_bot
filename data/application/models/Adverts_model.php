@@ -54,7 +54,7 @@ class Adverts_model extends CI_Model
       ->result();
 
     foreach ($result as $key => $item) {
-      $result[$key]->user = $this->user_model->getByTgId($item->user_id);
+      $item->user = $this->user_model->getByTgId($item->user_id);
     }
 
     return $result;
@@ -110,12 +110,14 @@ class Adverts_model extends CI_Model
 
     // make content
     $content = '[{"tag":"p","children":["' . $params['content'] . '"]},';
+    if ($info->images){
 
-    foreach ($info->images as $key => $image) {
-      $content .= '{"tag":"figure","children":[
-        {"tag":"img","attrs":{"src":"' . $this->config->item('base_url') . $image . '"}},
-        {"tag":"figcaption","children":["Изображение ' . ($key + 1) . '"]}
-      ]},';
+      foreach ($info->images as $key => $image) {
+        $content .= '{"tag":"figure","children":[
+            {"tag":"img","attrs":{"src":"' . $this->config->item('base_url') . $image . '"}},
+            {"tag":"figcaption","children":["Изображение ' . ($key + 1) . '"]}
+          ]},';
+      }
     }
     $content .= '{"tag":"p","children":[{"tag":"br"}]}]';
 

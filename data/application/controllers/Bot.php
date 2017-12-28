@@ -6,6 +6,7 @@
 class Bot extends MX_Controller {
 
   const STEPS = [
+    'start'      => 'welcome',
     "getRegion" => "Выбрать регион",
     "getCategory" => "Выбрать категорию",
     "search" => "Найти по ключевым словам",
@@ -54,6 +55,7 @@ class Bot extends MX_Controller {
     parent::__construct();
     $this->load->library('telegram/telegram.php');
     $this->load->model('bot_model');
+    $this->load->model('user_model');
     $this->admin_tg = config('admin_tg');
     $this->token_tg = config('token_tg');
   }
@@ -137,6 +139,16 @@ class Bot extends MX_Controller {
       'last_name'       => $this->user->last_name,
       'username'        => $this->user->username ?: $this->user->first_name . ' ' . $this->user->last_name,
     ];
+
+    if(!$this->user_model->getByTgId($data['user_id'])){
+      $this->db->insert('user', [
+        'tg_id' => $data['user_id'],
+        'username' => $data['username'],
+        'firstname' => $data['first_name'],
+        'lastname' => $data['last_name'],
+      ]);
+    }
+
     $this->_get_user_state($data, $post);
 
     $keyboard = [[self::STEPS['getAdvert']['action']], [self::STEPS['setAdvert']['action']], [self::STEPS['clearState']],[self::STEPS['helpMe']]];

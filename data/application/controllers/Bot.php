@@ -257,8 +257,7 @@ class Bot extends MX_Controller {
     $callback = $post->callback_query;
     list($type, $ident) = explode('_', $callback->data);
 
-
-    if (!$user_state->region_id && !$this->callback) {
+    if (!$user_state->region_id && !$this->callback && !$this->message) {
       return $this->getRegion($post);
     }
 
@@ -272,6 +271,7 @@ class Bot extends MX_Controller {
 
     elseif (!$user_state->region_id && $type == 'region') {
       $region = $this->bot_model->getRegion($ident);
+      if (!$region) $region = $this->bot_model->getRegionLike($this->message);
       $message = "Вы выбрали регион: " . $region->name;
       $this->_get_user_state([
         'user_id' => $this->user->id,
@@ -280,6 +280,22 @@ class Bot extends MX_Controller {
       ]);
       $this->bot->send_message($callback->message->chat->id, $message);
       return $this->getCategory($post);
+    }
+
+    elseif (!$user_state->region_id && $this->message) {
+      $region = $this->bot_model->getRegionLike($this->message);
+      if ($region){
+        $message = "Вы выбрали регион: " . $region->name;
+        $this->_get_user_state([
+          'user_id' => $this->user->id,
+          'region_id' => $region->id,
+          'previous_action' => self::STEPS['getRegion'],
+        ]);
+        $this->bot->send_message($this->chat_id, $message);
+        return $this->getCategory($post);
+      }else{
+        return $this->getRegion($post);
+      }
     }
 
     elseif (!$user_state->category_id && $type == 'next') {

@@ -41,6 +41,15 @@ class Bot_model extends CI_Model
     return $this->db->where('id', $id)->get('region')->row();
   }
 
+  public function getRegionLike($like)
+  {
+    return $this->db
+      ->like('name', $like, 'both')
+      ->or_like('alias', $like, 'both')
+      ->get('region')
+      ->row();
+  }
+
   public function getCategory($id)
   {
     return $this->db->where('id', $id)->get('category')->row();
